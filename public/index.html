@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Ruleta de Premios</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- Pantalla de clave de ingreso -->
+  <div id="screen-login" class="screen active">
+    <div class="login-card">
+      <div class="login-icon">🔒</div>
+      <h1>Ruleta de Premios</h1>
+      <p class="subtitle">Ingresá la clave de acceso para jugar</p>
+      <input id="login-password" type="password" placeholder="Clave de ingreso" autocomplete="off" />
+      <button id="login-btn">Ingresar</button>
+      <p id="login-error" class="error-msg"></p>
+    </div>
+  </div>
+
+  <!-- Pantalla del juego -->
+  <div id="screen-game" class="screen">
+    <h1 class="game-title">¡Girá y Ganá tu Premio!</h1>
+
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <div class="wheel-outer">
+        <div class="wheel-white-ring">
+          <div id="wheel" class="wheel"></div>
+        </div>
+      </div>
+      <div class="hub"><div class="hub-inner"></div></div>
+    </div>
+
+    <div class="play-panel">
+      <input id="email-input" type="email" placeholder="Ingresá tu email para jugar" autocomplete="off" />
+      <p id="email-error" class="error-msg"></p>
+      <button id="spin-btn">¡Girá la Ruleta y Ganá!</button>
+      <p class="legend">¿Te animás a hacer girar tu suerte?</p>
+    </div>
+  </div>
+
+  <!-- Modal de resultado -->
+  <div id="prize-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="confetti">🎉</div>
+      <h2>¡Felicitaciones!</h2>
+      <p class="prize-result">Ganaste:</p>
+      <p id="prize-text" class="prize-label"></p>
+      <button id="modal-close">Cerrar</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

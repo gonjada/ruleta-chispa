@@ -1,0 +1,192 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #eef3f7;
+  color: #1e2b38;
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* Login */
+#login-view.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 20%, #8fd8f7, #0f74c9);
+}
+.login-card {
+  width: 420px;
+  background: #fff;
+  border-radius: 24px;
+  padding: 48px 40px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+.login-card h1 { font-size: 26px; margin: 0 0 6px; }
+.login-card .subtitle { color: #667; margin-bottom: 24px; }
+.login-card input {
+  width: 100%;
+  font-size: 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid #d8e2ea;
+  outline: none;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.login-card button {
+  width: 100%;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  background: #0f74c9;
+  cursor: pointer;
+}
+.back-link { display: inline-block; margin-top: 18px; color: #0f74c9; font-size: 14px; text-decoration: none; }
+.error-msg { color: #d21f1f; font-size: 14px; min-height: 18px; }
+.msg { font-size: 14px; min-height: 18px; color: #2a8a4a; }
+
+/* Topbar */
+.topbar {
+  background: #0a3a5c;
+  color: #fff;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.topbar h1 { font-size: 20px; margin: 0; }
+.topbar-actions { display: flex; gap: 10px; }
+
+.btn-secondary {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-secondary.small { padding: 8px 14px; font-size: 13px; }
+.btn-secondary.danger { background: #fdeaea; color: #c21c1c; border-color: #f3c8c8; }
+.row-delete-btn {
+  background: none;
+  border: none;
+  color: #c21c1c;
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: underline;
+}
+.btn-primary {
+  background: #f7591d;
+  color: #fff;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.content {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 26px 28px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.card-header h2 { font-size: 19px; margin: 0; }
+.hint { font-size: 13px; color: #7a8a99; }
+.reg-actions { display: flex; align-items: center; gap: 10px; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #eef1f4;
+  font-size: 14px;
+}
+th { color: #7a8a99; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+td input[type=text] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d8e2ea;
+  border-radius: 8px;
+  font-size: 14px;
+}
+td input[type=number] {
+  width: 80px;
+  padding: 8px 10px;
+  border: 1px solid #d8e2ea;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.prob-cell { font-weight: 700; color: #0f74c9; }
+.delete-btn {
+  background: #fdeaea;
+  color: #c21c1c;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.inactive-row { opacity: 0.45; }
+
+.add-prize-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.add-prize-row input[type=text] {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 14px;
+  border: 1px solid #d8e2ea;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.add-prize-row input[type=number] {
+  width: 100px;
+  padding: 12px 14px;
+  border: 1px solid #d8e2ea;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.password-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.password-row input {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 14px;
+  border: 1px solid #d8e2ea;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+#regs-body tr:nth-child(even) { background: #fafcfe; }

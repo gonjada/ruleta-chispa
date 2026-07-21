@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel Admin - Ruleta</title>
+<link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+<div id="login-view" class="view active">
+  <div class="login-card">
+    <h1>🔒 Panel de Administración</h1>
+    <p class="subtitle">Ingresá la clave de acceso</p>
+    <input id="login-password" type="password" placeholder="Clave" autocomplete="off" />
+    <button id="login-btn">Ingresar</button>
+    <p id="login-error" class="error-msg"></p>
+    <a href="/" class="back-link">← Volver a la ruleta</a>
+  </div>
+</div>
+
+<div id="admin-view" class="view">
+  <header class="topbar">
+    <h1>Panel de Administración — Ruleta</h1>
+    <div class="topbar-actions">
+      <a href="/" class="btn-secondary">Ver ruleta</a>
+      <button id="logout-btn" class="btn-secondary">Salir</button>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Premios y probabilidades</h2>
+        <span class="hint">La probabilidad se calcula según el "peso" de cada premio respecto del total.</span>
+      </div>
+      <table id="prizes-table">
+        <thead>
+          <tr>
+            <th>Texto del premio</th>
+            <th>Peso</th>
+            <th>Probabilidad</th>
+            <th>Activo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="prizes-body"></tbody>
+      </table>
+
+      <div class="add-prize-row">
+        <input id="new-prize-label" type="text" placeholder="Texto del nuevo premio" />
+        <input id="new-prize-weight" type="number" min="1" placeholder="Peso" value="10" />
+        <button id="add-prize-btn" class="btn-primary">+ Agregar premio</button>
+      </div>
+      <p id="prizes-msg" class="msg"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Registro de participantes</h2>
+        <div class="reg-actions">
+          <span id="reg-count" class="hint"></span>
+          <a id="export-csv" href="/api/admin/registrations.csv" class="btn-secondary small">Exportar CSV</a>
+          <button id="refresh-regs" class="btn-secondary small">Actualizar</button>
+          <button id="clear-regs" class="btn-secondary small danger">Vaciar registro</button>
+        </div>
+      </div>
+      <p class="hint">Cada email puede girar una sola vez. Si necesitás volver a probar con el mismo mail, borralo de la lista o vaciá el registro.</p>
+      <table id="regs-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Premio ganado</th>
+            <th>Fecha y hora</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="regs-body"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Clave de acceso</h2>
+        <span class="hint">Esta clave sirve tanto para jugar como para entrar a este panel.</span>
+      </div>
+      <div class="password-row">
+        <input id="new-password" type="text" placeholder="Nueva clave" />
+        <button id="change-password-btn" class="btn-primary">Cambiar clave</button>
+      </div>
+      <p id="password-msg" class="msg"></p>
+    </section>
+
+  </main>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
