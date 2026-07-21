@@ -178,14 +178,27 @@ app.post('/api/admin/password', requireAuth, (req, res) => {
 });
 
 // -------- Archivos estaticos --------
-app.use(express.static(path.join(__dirname, 'public')));
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir));
 
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+  res.sendFile('admin.html', { root: publicDir }, (err) => {
+    if (err) {
+      console.error('Error sirviendo admin.html:', err.message);
+      if (!res.headersSent) res.status(500).send('Error interno');
+    }
+  });
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Fallback para cualquier otra ruta (SPA): usamos app.use en vez de app.get('*', ...)
+// para evitar problemas de compatibilidad de path-to-regexp con distintas versiones de Express.
+app.use((req, res) => {
+  res.sendFile('index.html', { root: publicDir }, (err) => {
+    if (err) {
+      console.error('Error sirviendo index.html:', err.message);
+      if (!res.headersSent) res.status(500).send('Error interno');
+    }
+  });
 });
 
 app.listen(PORT, () => {
