@@ -50,7 +50,7 @@
     wheelEl.style.background = `conic-gradient(${gradientParts.join(',')})`;
 
     wheelEl.innerHTML = '';
-    const fontSize = n > 10 ? 30 : n > 7 ? 36 : 42;
+    const maxFont = n > 10 ? 34 : n > 7 ? 40 : 46;
     prizes.forEach((p, i) => {
       const angle = step * i + step / 2;
       const label = document.createElement('div');
@@ -58,6 +58,11 @@
       label.style.transform = `rotate(${angle}deg)`;
       const span = document.createElement('span');
       span.textContent = p.label;
+      // Una sola linea "de costado" siempre: el tamaño de letra se achica según
+      // el largo del texto para que nunca se corte en dos renglones.
+      const len = p.label.length;
+      const fitFont = Math.round(340 / (len * 0.58));
+      const fontSize = Math.max(20, Math.min(maxFont, fitFont));
       span.style.fontSize = fontSize + 'px';
       label.appendChild(span);
       wheelEl.appendChild(label);

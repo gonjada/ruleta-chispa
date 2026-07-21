@@ -6,6 +6,22 @@
   --atilio-blue-light: #4a89b3;
 }
 
+/* Fuentes oficiales de Atilio's */
+@font-face {
+  font-family: 'Recoleta';
+  src: url('/fonts/recoleta-bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'TT Trailers Trial';
+  src: url('/fonts/tt-trailers-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -15,7 +31,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: var(--atilio-blue-dark);
-  font-family: 'Nunito Sans', 'Segoe UI', Arial, sans-serif;
+  font-family: 'TT Trailers Trial', 'Segoe UI', Arial, sans-serif;
 }
 
 #stage {
@@ -55,6 +71,7 @@ html, body {
 }
 .login-icon { font-size: 90px; margin-bottom: 10px; }
 .login-card h1 {
+  font-family: 'Recoleta', Georgia, serif;
   font-size: 56px;
   color: var(--atilio-blue-dark);
   margin: 10px 0 6px;
@@ -105,9 +122,10 @@ html, body {
 
 /* ---------- Game screen ---------- */
 .game-title {
+  font-family: 'Recoleta', Georgia, serif;
   color: #fff;
-  font-size: 60px;
-  font-weight: 900;
+  font-size: 58px;
+  font-weight: 700;
   text-align: center;
   text-shadow: 0 4px 10px rgba(0,0,0,0.35);
   margin: 60px 30px 16px;
@@ -195,17 +213,18 @@ html, body {
 }
 .slice-label span {
   position: absolute;
-  top: 30px;
-  left: -110px;
-  width: 220px;
+  top: 110px;
+  left: -170px;
+  width: 340px;
   text-align: center;
   display: block;
+  white-space: nowrap;
   color: #fff;
-  font-family: 'Nunito Sans', Arial, sans-serif;
-  font-weight: 900;
+  font-family: 'TT Trailers Trial', Arial, sans-serif;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  line-height: 1.05;
+  line-height: 1;
   text-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
@@ -268,22 +287,10 @@ html, body {
   padding-bottom: 60px;
   text-align: center;
 }
-.brand-name {
-  font-family: 'Bitter', Georgia, serif;
-  font-weight: 900;
-  font-size: 54px;
-  letter-spacing: 4px;
-  color: #ffffff;
-  text-shadow: 0 3px 8px rgba(0,0,0,0.3);
-}
-.brand-sub {
-  font-family: 'Bitter', Georgia, serif;
-  font-weight: 700;
-  font-size: 24px;
-  letter-spacing: 3px;
-  color: #ffffff;
-  opacity: 0.9;
-  margin-top: -6px;
+.brand-logo {
+  width: 410px;
+  height: auto;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.3));
 }
 
 /* ---------- Modal ---------- */
@@ -310,7 +317,8 @@ html, body {
 }
 .confetti { font-size: 90px; margin-bottom: 10px; }
 .modal-card h2 {
-  font-size: 54px;
+  font-family: 'Recoleta', Georgia, serif;
+  font-size: 52px;
   color: var(--atilio-blue-dark);
   margin: 10px 0 20px;
 }
@@ -320,8 +328,10 @@ html, body {
   margin: 0;
 }
 .prize-label {
+  font-family: 'TT Trailers Trial', Arial, sans-serif;
   font-size: 48px;
-  font-weight: 900;
+  font-weight: 400;
+  text-transform: uppercase;
   color: var(--atilio-blue);
   margin: 10px 0 40px;
 }
