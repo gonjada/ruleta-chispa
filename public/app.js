@@ -58,10 +58,17 @@
       label.style.transform = `rotate(${angle}deg)`;
       const span = document.createElement('span');
       span.textContent = p.label;
+      // Evita texto "cabeza abajo": los premios que caen en la mitad izquierda
+      // de la ruleta (entre 90° y 270°) se giran 180° extra (sobre su propio
+      // centro, sin mover su posición) para que se lean igual de bien que los
+      // de la derecha, como el "20% OFF" de referencia.
+      const normalized = ((angle % 360) + 360) % 360;
+      const flipped = normalized > 90 && normalized < 270;
+      if (flipped) span.style.transform = 'rotate(180deg)';
       // Una sola linea "de costado" siempre: el tamaño de letra se achica según
       // el largo del texto para que nunca se corte en dos renglones.
       const len = p.label.length;
-      const fitFont = Math.round(340 / (len * 0.58));
+      const fitFont = Math.round(340 / (len * 0.62));
       const fontSize = Math.max(20, Math.min(maxFont, fitFont));
       span.style.fontSize = fontSize + 'px';
       label.appendChild(span);

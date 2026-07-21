@@ -220,8 +220,8 @@ html, body {
   display: block;
   white-space: nowrap;
   color: #fff;
-  font-family: 'TT Trailers Trial', Arial, sans-serif;
-  font-weight: 400;
+  font-family: 'Recoleta', Georgia, serif;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   line-height: 1;
@@ -328,9 +328,9 @@ html, body {
   margin: 0;
 }
 .prize-label {
-  font-family: 'TT Trailers Trial', Arial, sans-serif;
-  font-size: 48px;
-  font-weight: 400;
+  font-family: 'Recoleta', Georgia, serif;
+  font-size: 46px;
+  font-weight: 700;
   text-transform: uppercase;
   color: var(--atilio-blue);
   margin: 10px 0 40px;
