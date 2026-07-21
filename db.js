@@ -26,7 +26,10 @@ db.defaults({
     // Configuracion SMTP cargada desde el panel admin (alternativa a las
     // variables de entorno de Render). Si "host" esta vacio, el servidor usa
     // las variables de entorno como respaldo.
-    smtp: { host: '', port: 587, user: '', pass: '', from: '', secure: false }
+    smtp: { host: '', port: 587, user: '', pass: '', from: '', secure: false },
+    // Configuracion de Brevo (API HTTPS): alternativa al SMTP para hostings
+    // que bloquean los puertos de SMTP (como el plan free de Render).
+    brevo: { apiKey: '', senderEmail: '', senderName: "Atilio's Sandwich Co." }
   },
   prizes: [
     { id: 1, label: '10% OFF', weight: 20, active: true, sendEmail: true },
@@ -67,6 +70,9 @@ if (db.get('config.emailBody').value() === undefined) {
 }
 if (db.get('config.smtp').value() === undefined) {
   db.set('config.smtp', { host: '', port: 587, user: '', pass: '', from: '', secure: false }).write();
+}
+if (db.get('config.brevo').value() === undefined) {
+  db.set('config.brevo', { apiKey: '', senderEmail: '', senderName: "Atilio's Sandwich Co." }).write();
 }
 
 module.exports = db;

@@ -95,6 +95,48 @@ function getSmtpConfig() {
   return null;
 }
 
+// Devuelve la configuracion de Brevo (API HTTP) si esta cargada. Se usa como
+// alternativa al SMTP: al ser HTTPS en vez de SMTP, no lo bloquean los
+// hostings gratuitos (como Render) que cortan los puertos 25/465/587.
+function getBrevoConfig() {
+  const cfg = db.get('config.brevo').value() || {};
+  if (!cfg.apiKey) return null;
+  return {
+    apiKey: cfg.apiKey,
+    senderEmail: cfg.senderEmail || '',
+    senderName: cfg.senderName || "Atilio's Sandwich Co."
+  };
+}
+
+async function sendViaBrevo(cfg, to, subject, html, text) {
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': cfg.apiKey,
+      'Content-Type': 'application/json',
+      'accept': 'application/json'
+    },
+    body: JSON.stringify({
+      sender: { name: cfg.senderName, email: cfg.senderEmail },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+      textContent: text
+    })
+  });
+  if (!res.ok) {
+    let errText = '';
+    try {
+      const j = await res.json();
+      errText = j.message || JSON.stringify(j);
+    } catch (e) {
+      errText = await res.text().catch(() => res.statusText);
+    }
+    throw new Error(`Brevo (${res.status}): ${errText}`);
+  }
+  return true;
+}
+
 function getTransporter() {
   const cfg = getSmtpConfig();
   if (!cfg) return null; // Email no configurado todavia: la app sigue funcionando sin mandar mail.
@@ -138,10 +180,6 @@ function buildEmailHtml(bodyText) {
 }
 
 async function sendPrizeEmail(to, prizeLabel) {
-  const transporter = getTransporter();
-  if (!transporter) return { sent: false, reason: 'SMTP no configurado' };
-  const cfg = getSmtpConfig();
-
   // Fecha del dia en que se manda el mail (no la fecha en que jugo la persona),
   // para el placeholder {{fecha}} usado en la frase de validez del premio.
   const fecha = new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -150,6 +188,26 @@ async function sendPrizeEmail(to, prizeLabel) {
   const bodyTemplate = db.get('config.emailBody').value() || 'Ganaste: {{premio}}';
   const subject = subjectTemplate.replace(/{{premio}}/g, prizeLabel).replace(/{{fecha}}/g, fecha);
   const bodyText = bodyTemplate.replace(/{{premio}}/g, prizeLabel).replace(/{{fecha}}/g, fecha);
+  const html = buildEmailHtml(bodyText);
+
+  // Prioridad: Brevo (API HTTPS, funciona en cualquier hosting) por sobre SMTP
+  // (bloqueado en el plan free de Render). Si el dia de mañana se migra a un
+  // hosting sin ese bloqueo, alcanza con borrar la config de Brevo para volver
+  // a usar el SMTP normal sin tocar codigo.
+  const brevoCfg = getBrevoConfig();
+  if (brevoCfg) {
+    try {
+      await sendViaBrevo(brevoCfg, to, subject, html, bodyText);
+      return { sent: true };
+    } catch (err) {
+      console.error('Error enviando mail de premio via Brevo:', err.message);
+      return { sent: false, reason: err.message };
+    }
+  }
+
+  const transporter = getTransporter();
+  if (!transporter) return { sent: false, reason: 'No hay Brevo ni SMTP configurado' };
+  const cfg = getSmtpConfig();
 
   try {
     await transporter.sendMail({
@@ -157,11 +215,11 @@ async function sendPrizeEmail(to, prizeLabel) {
       to,
       subject,
       text: bodyText,
-      html: buildEmailHtml(bodyText)
+      html
     });
     return { sent: true };
   } catch (err) {
-    console.error('Error enviando mail de premio:', err.message);
+    console.error('Error enviando mail de premio via SMTP:', err.message);
     return { sent: false, reason: err.message };
   }
 }
@@ -318,8 +376,8 @@ app.post('/api/admin/registrations/:id/resend-email', requireAuth, async (req, r
   const id = Number(req.params.id);
   const reg = db.get('registrations').find({ id }).value();
   if (!reg) return res.status(404).json({ ok: false, error: 'Registro no encontrado' });
-  if (!getSmtpConfig()) {
-    return res.status(400).json({ ok: false, error: 'SMTP no configurado en el servidor todavia' });
+  if (!getBrevoConfig() && !getSmtpConfig()) {
+    return res.status(400).json({ ok: false, error: 'No hay Brevo ni SMTP configurado en el servidor todavia' });
   }
   const result = await sendPrizeEmail(reg.email, reg.prizeLabel);
   if (result.sent) {
@@ -344,7 +402,7 @@ app.get('/api/admin/email-template', requireAuth, (req, res) => {
   res.json({
     subject: db.get('config.emailSubject').value() || '',
     body: db.get('config.emailBody').value() || '',
-    smtpConfigured: !!getSmtpConfig()
+    smtpConfigured: !!(getBrevoConfig() || getSmtpConfig())
   });
 });
 
@@ -363,12 +421,47 @@ app.post('/api/admin/test-email', requireAuth, async (req, res) => {
   if (!to || !/^\S+@\S+\.\S+$/.test(to)) {
     return res.status(400).json({ ok: false, error: 'Email invalido' });
   }
-  if (!getSmtpConfig()) {
-    return res.status(400).json({ ok: false, error: 'SMTP no configurado en el servidor todavia' });
+  if (!getBrevoConfig() && !getSmtpConfig()) {
+    return res.status(400).json({ ok: false, error: 'No hay Brevo ni SMTP configurado en el servidor todavia' });
   }
   const result = await sendPrizeEmail(String(to).trim().toLowerCase(), 'Premio de prueba');
   if (result.sent) return res.json({ ok: true });
   return res.status(500).json({ ok: false, error: result.reason || 'No se pudo enviar el mail' });
+});
+
+// -------- Admin: configuracion de Brevo (API HTTPS, no depende de puertos SMTP) --------
+app.get('/api/admin/brevo-config', requireAuth, (req, res) => {
+  const cfg = db.get('config.brevo').value() || {};
+  res.json({
+    hasApiKey: !!cfg.apiKey,
+    senderEmail: cfg.senderEmail || '',
+    senderName: cfg.senderName || ''
+  });
+});
+
+app.post('/api/admin/brevo-config', requireAuth, (req, res) => {
+  const { apiKey, senderEmail, senderName } = req.body || {};
+  const existing = db.get('config.brevo').value() || {};
+  const finalSenderEmail = senderEmail !== undefined ? String(senderEmail).trim() : (existing.senderEmail || '');
+  if (!finalSenderEmail) {
+    return res.status(400).json({ ok: false, error: 'Falta el email remitente (tiene que ser un remitente validado en tu cuenta de Brevo)' });
+  }
+  const updated = {
+    // Si no mandan una API key nueva, se conserva la que ya estaba guardada.
+    apiKey: (apiKey && String(apiKey).trim()) ? String(apiKey).trim() : (existing.apiKey || ''),
+    senderEmail: finalSenderEmail,
+    senderName: senderName !== undefined ? String(senderName).trim() : (existing.senderName || "Atilio's Sandwich Co.")
+  };
+  if (!updated.apiKey) {
+    return res.status(400).json({ ok: false, error: 'Falta la API key de Brevo' });
+  }
+  db.set('config.brevo', updated).write();
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/brevo-config', requireAuth, (req, res) => {
+  db.set('config.brevo', { apiKey: '', senderEmail: '', senderName: '' }).write();
+  res.json({ ok: true });
 });
 
 // -------- Admin: configuracion SMTP (se guarda en la base, no en el codigo) --------
