@@ -112,13 +112,14 @@ html, body {
 
 .error-msg {
   color: #d21f1f;
-  font-size: 26px;
+  font-family: 'Recoleta', Georgia, serif;
+  font-size: 38px;
   font-weight: 700;
   min-height: 34px;
   margin: 6px 0 0;
 }
 #screen-login .error-msg { color: #d21f1f; }
-#screen-game .error-msg { color: #fff3b0; text-shadow: 0 1px 3px rgba(0,0,0,0.4); font-size: 44px; }
+#screen-game .error-msg { color: #fff3b0; text-shadow: 0 1px 3px rgba(0,0,0,0.4); font-size: 64px; }
 
 /* ---------- Game screen ---------- */
 .game-title {
