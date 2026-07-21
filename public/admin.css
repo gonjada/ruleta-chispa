@@ -231,3 +231,47 @@ code {
   border-radius: 6px;
   font-size: 12px;
 }
+
+/* Configuración SMTP */
+.smtp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0 16px;
+}
+.smtp-secure-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.smtp-secure-field label { margin-bottom: 0; }
+.smtp-secure-field input[type=checkbox] { width: 18px; height: 18px; }
+@media (max-width: 640px) {
+  .smtp-grid { grid-template-columns: 1fr; }
+}
+
+/* Banner del mail */
+.banner-preview-wrap {
+  margin-bottom: 14px;
+  border: 1px solid #d8e2ea;
+  border-radius: 12px;
+  padding: 10px;
+  background: #f7fafc;
+  max-width: 400px;
+}
+.banner-preview-wrap.hidden { display: none; }
+.banner-preview-wrap img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+.email-actions input[type=file] {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: 1px solid #d8e2ea;
+  border-radius: 10px;
+  font-size: 13px;
+  background: #fff;
+}

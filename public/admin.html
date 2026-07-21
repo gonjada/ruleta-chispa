@@ -59,6 +59,45 @@
 
     <section class="card">
       <div class="card-header">
+        <h2>Configuración SMTP</h2>
+        <span class="hint">Datos del servidor de correo que se usa para mandar el mail de premio. Los podés pedir a tu proveedor de mail (Brevo, Gmail, etc.).</span>
+      </div>
+      <p id="smtp-config-status" class="hint"></p>
+      <div class="smtp-grid">
+        <div class="email-field">
+          <label>Host SMTP</label>
+          <input id="smtp-host" type="text" placeholder="smtp-relay.brevo.com" />
+        </div>
+        <div class="email-field">
+          <label>Puerto</label>
+          <input id="smtp-port" type="number" placeholder="587" />
+        </div>
+        <div class="email-field">
+          <label>Usuario</label>
+          <input id="smtp-user" type="text" placeholder="usuario@ejemplo.com" autocomplete="off" />
+        </div>
+        <div class="email-field">
+          <label>Contraseña</label>
+          <input id="smtp-pass" type="password" placeholder="•••••••• (dejar vacío para no cambiarla)" autocomplete="new-password" />
+        </div>
+        <div class="email-field">
+          <label>Remitente (From)</label>
+          <input id="smtp-from" type="text" placeholder="Atilio's Sandwich Co. <noreply@atilios.com>" />
+        </div>
+        <div class="email-field smtp-secure-field">
+          <label>Conexión segura (SSL, puerto 465)</label>
+          <input id="smtp-secure" type="checkbox" />
+        </div>
+      </div>
+      <div class="email-actions">
+        <button id="save-smtp-btn" class="btn-primary">Guardar configuración SMTP</button>
+        <button id="clear-smtp-btn" class="btn-secondary danger">Borrar configuración</button>
+      </div>
+      <p id="smtp-config-msg" class="msg"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
         <h2>Email de premio</h2>
         <span class="hint">Se manda automáticamente cuando alguien gana un premio con "Enviar mail" tildado. Usá <code>{{premio}}</code> donde quieras que aparezca el nombre del premio ganado.</span>
       </div>
@@ -77,6 +116,23 @@
         <button id="send-test-email-btn" class="btn-secondary">Enviar mail de prueba</button>
       </div>
       <p id="email-template-msg" class="msg"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Banner del mail (zócalo)</h2>
+        <span class="hint">Imagen JPG opcional que se agrega abajo del texto en el mail de premio. Tamaño máximo: 800x400px.</span>
+      </div>
+      <div id="banner-preview-wrap" class="banner-preview-wrap hidden">
+        <img id="banner-preview" alt="Banner actual" />
+      </div>
+      <p id="banner-status" class="hint"></p>
+      <div class="email-actions">
+        <input id="banner-file" type="file" accept="image/jpeg" />
+        <button id="upload-banner-btn" class="btn-primary">Subir banner</button>
+        <button id="remove-banner-btn" class="btn-secondary danger">Quitar banner</button>
+      </div>
+      <p id="banner-msg" class="msg"></p>
     </section>
 
     <section class="card">

@@ -29,6 +29,25 @@
   const sendTestEmailBtn = document.getElementById('send-test-email-btn');
   const emailTemplateMsg = document.getElementById('email-template-msg');
 
+  const smtpConfigStatus = document.getElementById('smtp-config-status');
+  const smtpHostInput = document.getElementById('smtp-host');
+  const smtpPortInput = document.getElementById('smtp-port');
+  const smtpUserInput = document.getElementById('smtp-user');
+  const smtpPassInput = document.getElementById('smtp-pass');
+  const smtpFromInput = document.getElementById('smtp-from');
+  const smtpSecureInput = document.getElementById('smtp-secure');
+  const saveSmtpBtn = document.getElementById('save-smtp-btn');
+  const clearSmtpBtn = document.getElementById('clear-smtp-btn');
+  const smtpConfigMsg = document.getElementById('smtp-config-msg');
+
+  const bannerPreviewWrap = document.getElementById('banner-preview-wrap');
+  const bannerPreview = document.getElementById('banner-preview');
+  const bannerStatus = document.getElementById('banner-status');
+  const bannerFileInput = document.getElementById('banner-file');
+  const uploadBannerBtn = document.getElementById('upload-banner-btn');
+  const removeBannerBtn = document.getElementById('remove-banner-btn');
+  const bannerMsg = document.getElementById('banner-msg');
+
   function showView(view) {
     [loginView, adminView].forEach(v => v.classList.remove('active'));
     view.classList.add('active');
@@ -42,6 +61,8 @@
       loadPrizes();
       loadRegistrations();
       loadEmailTemplate();
+      loadSmtpConfig();
+      loadBanner();
     } else {
       showView(loginView);
     }
@@ -65,6 +86,8 @@
       loadPrizes();
       loadRegistrations();
       loadEmailTemplate();
+      loadSmtpConfig();
+      loadBanner();
     } else {
       loginError.textContent = 'Clave incorrecta';
     }
@@ -228,7 +251,7 @@
       smtpStatus.textContent = '✓ Envío de mail configurado';
       smtpStatus.style.color = '#2a8a4a';
     } else {
-      smtpStatus.textContent = '⚠ Todavía no configuraste el envío de mail (faltan las variables SMTP en el servidor). Los premios se siguen registrando igual, pero no se manda el mail.';
+      smtpStatus.textContent = '⚠ Todavía no configuraste el envío de mail. Completá la sección "Configuración SMTP" de arriba. Los premios se siguen registrando igual, pero no se manda el mail.';
       smtpStatus.style.color = '#c21c1c';
     }
   }
@@ -287,6 +310,129 @@
     } finally {
       sendTestEmailBtn.disabled = false;
     }
+  });
+
+  // ---------- Configuración SMTP ----------
+  async function loadSmtpConfig() {
+    const res = await fetch('/api/admin/smtp-config');
+    if (res.status === 401) { showView(loginView); return; }
+    const data = await res.json();
+    smtpHostInput.value = data.host || '';
+    smtpPortInput.value = data.port || 587;
+    smtpUserInput.value = data.user || '';
+    smtpFromInput.value = data.from || '';
+    smtpSecureInput.checked = !!data.secure;
+    smtpPassInput.value = '';
+    smtpPassInput.placeholder = data.hasPassword
+      ? '•••••••• (dejar vacío para no cambiarla)'
+      : '(sin contraseña guardada)';
+
+    if (data.configuredHere) {
+      smtpConfigStatus.textContent = '✓ Configuración SMTP guardada acá en el panel';
+      smtpConfigStatus.style.color = '#2a8a4a';
+    } else if (data.usingEnvFallback) {
+      smtpConfigStatus.textContent = 'ℹ Usando variables de entorno configuradas en Render (no hay nada guardado acá todavía)';
+      smtpConfigStatus.style.color = '#7a8a99';
+    } else {
+      smtpConfigStatus.textContent = '⚠ Todavía no configuraste el envío de mail';
+      smtpConfigStatus.style.color = '#c21c1c';
+    }
+  }
+
+  saveSmtpBtn.addEventListener('click', async () => {
+    const host = smtpHostInput.value.trim();
+    if (!host) {
+      smtpConfigMsg.textContent = 'Completá al menos el host SMTP';
+      smtpConfigMsg.style.color = '#d21f1f';
+      return;
+    }
+    const payload = {
+      host,
+      port: Number(smtpPortInput.value) || 587,
+      user: smtpUserInput.value.trim(),
+      from: smtpFromInput.value.trim(),
+      secure: smtpSecureInput.checked
+    };
+    if (smtpPassInput.value.trim()) payload.pass = smtpPassInput.value.trim();
+
+    const res = await fetch('/api/admin/smtp-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      smtpConfigMsg.textContent = 'Configuración SMTP guardada ✓';
+      smtpConfigMsg.style.color = '#2a8a4a';
+      loadSmtpConfig();
+      loadEmailTemplate();
+    } else {
+      smtpConfigMsg.textContent = data.error || 'Error al guardar';
+      smtpConfigMsg.style.color = '#d21f1f';
+    }
+    setTimeout(() => smtpConfigMsg.textContent = '', 3000);
+  });
+
+  clearSmtpBtn.addEventListener('click', async () => {
+    if (!confirm('¿Borrar la configuración SMTP guardada acá? Si hay variables SMTP en Render, la app va a volver a usarlas.')) return;
+    await fetch('/api/admin/smtp-config', { method: 'DELETE' });
+    loadSmtpConfig();
+    loadEmailTemplate();
+  });
+
+  // ---------- Banner del mail (zócalo) ----------
+  async function loadBanner() {
+    const res = await fetch('/api/admin/email-banner');
+    if (res.status === 401) { showView(loginView); return; }
+    const data = await res.json();
+    if (data.hasBanner) {
+      bannerPreview.src = data.url;
+      bannerPreviewWrap.classList.remove('hidden');
+      bannerStatus.textContent = '✓ Banner cargado, se incluye en el mail de premio';
+      bannerStatus.style.color = '#2a8a4a';
+    } else {
+      bannerPreviewWrap.classList.add('hidden');
+      bannerStatus.textContent = 'Todavía no subiste ningún banner';
+      bannerStatus.style.color = '#7a8a99';
+    }
+  }
+
+  uploadBannerBtn.addEventListener('click', async () => {
+    const file = bannerFileInput.files[0];
+    if (!file) {
+      bannerMsg.textContent = 'Elegí un archivo JPG primero';
+      bannerMsg.style.color = '#d21f1f';
+      return;
+    }
+    uploadBannerBtn.disabled = true;
+    bannerMsg.textContent = 'Subiendo...';
+    bannerMsg.style.color = '#7a8a99';
+    try {
+      const formData = new FormData();
+      formData.append('banner', file);
+      const res = await fetch('/api/admin/email-banner', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.ok) {
+        bannerMsg.textContent = 'Banner subido ✓';
+        bannerMsg.style.color = '#2a8a4a';
+        bannerFileInput.value = '';
+        loadBanner();
+      } else {
+        bannerMsg.textContent = data.error || 'No se pudo subir el banner';
+        bannerMsg.style.color = '#d21f1f';
+      }
+    } catch (e) {
+      bannerMsg.textContent = 'Error de conexión';
+      bannerMsg.style.color = '#d21f1f';
+    } finally {
+      uploadBannerBtn.disabled = false;
+    }
+  });
+
+  removeBannerBtn.addEventListener('click', async () => {
+    if (!confirm('¿Quitar el banner del mail de premio?')) return;
+    await fetch('/api/admin/email-banner', { method: 'DELETE' });
+    loadBanner();
   });
 
   checkSession();
