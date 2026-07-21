@@ -1,0 +1,19 @@
+{
+  "name": "ruleta-chispa",
+  "version": "1.0.0",
+  "description": "Web app de ruleta de premios con panel de administracion - Chispa Creativa",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "lowdb": "^1.0.0",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
