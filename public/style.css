@@ -1,3 +1,11 @@
+:root {
+  /* Azul de marca Atilio's */
+  --atilio-blue: #1c4b6e;
+  --atilio-blue-dark: #0c2c42;
+  --atilio-blue-mid: #235d86;
+  --atilio-blue-light: #4a89b3;
+}
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -6,8 +14,8 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0a3a5c;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--atilio-blue-dark);
+  font-family: 'Nunito Sans', 'Segoe UI', Arial, sans-serif;
 }
 
 #stage {
@@ -17,7 +25,7 @@ html, body {
   width: 1080px;
   height: 1920px;
   transform-origin: top left;
-  background: radial-gradient(circle at 50% 25%, #8fd8f7 0%, #35a3e0 40%, #0f74c9 70%, #0a4f8c 100%);
+  background: radial-gradient(circle at 50% 20%, var(--atilio-blue-light) 0%, var(--atilio-blue-mid) 40%, var(--atilio-blue) 70%, var(--atilio-blue-dark) 100%);
   overflow: hidden;
 }
 
@@ -48,7 +56,7 @@ html, body {
 .login-icon { font-size: 90px; margin-bottom: 10px; }
 .login-card h1 {
   font-size: 56px;
-  color: #0a3a5c;
+  color: var(--atilio-blue-dark);
   margin: 10px 0 6px;
 }
 .login-card .subtitle {
@@ -66,7 +74,7 @@ html, body {
   margin-bottom: 26px;
   text-align: center;
 }
-.login-card input:focus { border-color: #f7941d; }
+.login-card input:focus { border-color: var(--atilio-blue); }
 .login-card button,
 #spin-btn {
   width: 100%;
@@ -76,13 +84,13 @@ html, body {
   border: none;
   border-radius: 60px;
   color: #fff;
-  background: linear-gradient(180deg, #ff9a3d 0%, #f7591d 60%, #e0390c 100%);
-  box-shadow: 0 12px 0 #b52a06, 0 20px 30px rgba(0,0,0,0.3);
+  background: linear-gradient(180deg, var(--atilio-blue-light) 0%, var(--atilio-blue) 60%, var(--atilio-blue-dark) 100%);
+  box-shadow: 0 12px 0 #071c2b, 0 20px 30px rgba(0,0,0,0.35);
   cursor: pointer;
   transition: transform 0.1s ease;
 }
 .login-card button:active,
-#spin-btn:active { transform: translateY(6px); box-shadow: 0 6px 0 #b52a06, 0 10px 20px rgba(0,0,0,0.3); }
+#spin-btn:active { transform: translateY(6px); box-shadow: 0 6px 0 #071c2b, 0 10px 20px rgba(0,0,0,0.3); }
 #spin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .error-msg {
@@ -92,6 +100,8 @@ html, body {
   min-height: 34px;
   margin: 6px 0 0;
 }
+#screen-login .error-msg { color: #d21f1f; }
+#screen-game .error-msg { color: #fff3b0; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
 
 /* ---------- Game screen ---------- */
 .game-title {
@@ -100,14 +110,14 @@ html, body {
   font-weight: 900;
   text-align: center;
   text-shadow: 0 4px 10px rgba(0,0,0,0.35);
-  margin: 70px 30px 20px;
+  margin: 60px 30px 16px;
 }
 
 .wheel-wrap {
   position: relative;
   width: 900px;
   height: 900px;
-  margin-top: 40px;
+  margin-top: 30px;
 }
 
 .pointer {
@@ -185,16 +195,18 @@ html, body {
 }
 .slice-label span {
   position: absolute;
-  top: 46px;
-  left: -95px;
-  width: 190px;
+  top: 30px;
+  left: -110px;
+  width: 220px;
   text-align: center;
   display: block;
   color: #fff;
-  font-weight: 800;
-  font-size: 30px;
-  line-height: 1.15;
-  text-shadow: 0 2px 5px rgba(0,0,0,0.45);
+  font-family: 'Nunito Sans', Arial, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.05;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
 .hub {
@@ -223,7 +235,7 @@ html, body {
 
 .play-panel {
   width: 820px;
-  margin-top: 55px;
+  margin-top: 45px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -248,6 +260,30 @@ html, body {
   margin-top: 22px;
   text-align: center;
   text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* ---------- Marca / pie de página ---------- */
+.brand-footer {
+  margin-top: auto;
+  padding-bottom: 60px;
+  text-align: center;
+}
+.brand-name {
+  font-family: 'Bitter', Georgia, serif;
+  font-weight: 900;
+  font-size: 54px;
+  letter-spacing: 4px;
+  color: #ffffff;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+.brand-sub {
+  font-family: 'Bitter', Georgia, serif;
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: 3px;
+  color: #ffffff;
+  opacity: 0.9;
+  margin-top: -6px;
 }
 
 /* ---------- Modal ---------- */
@@ -275,7 +311,7 @@ html, body {
 .confetti { font-size: 90px; margin-bottom: 10px; }
 .modal-card h2 {
   font-size: 54px;
-  color: #0a3a5c;
+  color: var(--atilio-blue-dark);
   margin: 10px 0 20px;
 }
 .prize-result {
@@ -286,7 +322,7 @@ html, body {
 .prize-label {
   font-size: 48px;
   font-weight: 900;
-  color: #e0390c;
+  color: var(--atilio-blue);
   margin: 10px 0 40px;
 }
 #modal-close {
@@ -297,8 +333,8 @@ html, body {
   border: none;
   border-radius: 60px;
   color: #fff;
-  background: linear-gradient(180deg, #35a3e0 0%, #0f74c9 100%);
-  box-shadow: 0 10px 0 #0a4f8c;
+  background: linear-gradient(180deg, var(--atilio-blue-light) 0%, var(--atilio-blue) 100%);
+  box-shadow: 0 10px 0 var(--atilio-blue-dark);
   cursor: pointer;
 }
-#modal-close:active { transform: translateY(5px); box-shadow: 0 5px 0 #0a4f8c; }
+#modal-close:active { transform: translateY(5px); box-shadow: 0 5px 0 var(--atilio-blue-dark); }

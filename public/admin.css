@@ -190,3 +190,44 @@ td input[type=number] {
 }
 
 #regs-body tr:nth-child(even) { background: #fafcfe; }
+
+/* Email de premio */
+.email-field { margin-bottom: 14px; }
+.email-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7a8a99;
+  margin-bottom: 6px;
+}
+.email-field input[type=text],
+.email-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d8e2ea;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+.email-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.email-actions input[type=text] {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 14px;
+  border: 1px solid #d8e2ea;
+  border-radius: 10px;
+  font-size: 14px;
+}
+code {
+  background: #eef3f7;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+}

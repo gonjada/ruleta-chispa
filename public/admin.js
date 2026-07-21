@@ -21,6 +21,14 @@
   const changePasswordBtn = document.getElementById('change-password-btn');
   const passwordMsg = document.getElementById('password-msg');
 
+  const smtpStatus = document.getElementById('smtp-status');
+  const emailSubjectInput = document.getElementById('email-subject');
+  const emailBodyInput = document.getElementById('email-body');
+  const saveEmailTemplateBtn = document.getElementById('save-email-template-btn');
+  const testEmailTo = document.getElementById('test-email-to');
+  const sendTestEmailBtn = document.getElementById('send-test-email-btn');
+  const emailTemplateMsg = document.getElementById('email-template-msg');
+
   function showView(view) {
     [loginView, adminView].forEach(v => v.classList.remove('active'));
     view.classList.add('active');
@@ -33,6 +41,7 @@
       showView(adminView);
       loadPrizes();
       loadRegistrations();
+      loadEmailTemplate();
     } else {
       showView(loginView);
     }
@@ -55,6 +64,7 @@
       showView(adminView);
       loadPrizes();
       loadRegistrations();
+      loadEmailTemplate();
     } else {
       loginError.textContent = 'Clave incorrecta';
     }
@@ -87,23 +97,27 @@
         <td><input type="number" min="0" value="${p.weight}" data-field="weight" /></td>
         <td class="prob-cell">${prob}</td>
         <td><input type="checkbox" ${p.active ? 'checked' : ''} data-field="active" /></td>
+        <td><input type="checkbox" ${p.sendEmail !== false ? 'checked' : ''} data-field="sendEmail" title="Enviar mail con el premio cuando alguien lo gane" /></td>
         <td><button class="delete-btn">Eliminar</button></td>
       `;
 
       const labelInput = tr.querySelector('[data-field=label]');
       const weightInput = tr.querySelector('[data-field=weight]');
       const activeInput = tr.querySelector('[data-field=active]');
+      const sendEmailInput = tr.querySelector('[data-field=sendEmail]');
       const deleteBtn = tr.querySelector('.delete-btn');
 
       const save = () => updatePrize(p.id, {
         label: labelInput.value,
         weight: Number(weightInput.value),
-        active: activeInput.checked
+        active: activeInput.checked,
+        sendEmail: sendEmailInput.checked
       });
 
       labelInput.addEventListener('change', save);
       weightInput.addEventListener('change', save);
       activeInput.addEventListener('change', save);
+      sendEmailInput.addEventListener('change', save);
       deleteBtn.addEventListener('click', () => deletePrize(p.id));
 
       prizesBody.appendChild(tr);
@@ -200,6 +214,78 @@
     } else {
       passwordMsg.textContent = data.error || 'Error';
       passwordMsg.style.color = '#d21f1f';
+    }
+  });
+
+  // ---------- Email de premio ----------
+  async function loadEmailTemplate() {
+    const res = await fetch('/api/admin/email-template');
+    if (res.status === 401) { showView(loginView); return; }
+    const data = await res.json();
+    emailSubjectInput.value = data.subject || '';
+    emailBodyInput.value = data.body || '';
+    if (data.smtpConfigured) {
+      smtpStatus.textContent = '✓ Envío de mail configurado';
+      smtpStatus.style.color = '#2a8a4a';
+    } else {
+      smtpStatus.textContent = '⚠ Todavía no configuraste el envío de mail (faltan las variables SMTP en el servidor). Los premios se siguen registrando igual, pero no se manda el mail.';
+      smtpStatus.style.color = '#c21c1c';
+    }
+  }
+
+  saveEmailTemplateBtn.addEventListener('click', async () => {
+    const subject = emailSubjectInput.value.trim();
+    const body = emailBodyInput.value.trim();
+    if (!subject || !body) {
+      emailTemplateMsg.textContent = 'Completá el asunto y el cuerpo del mail';
+      emailTemplateMsg.style.color = '#d21f1f';
+      return;
+    }
+    const res = await fetch('/api/admin/email-template', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, body })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      emailTemplateMsg.textContent = 'Plantilla guardada ✓';
+      emailTemplateMsg.style.color = '#2a8a4a';
+    } else {
+      emailTemplateMsg.textContent = data.error || 'Error al guardar';
+      emailTemplateMsg.style.color = '#d21f1f';
+    }
+    setTimeout(() => emailTemplateMsg.textContent = '', 2500);
+  });
+
+  sendTestEmailBtn.addEventListener('click', async () => {
+    const to = testEmailTo.value.trim();
+    if (!to) {
+      emailTemplateMsg.textContent = 'Escribí un email para mandar la prueba';
+      emailTemplateMsg.style.color = '#d21f1f';
+      return;
+    }
+    sendTestEmailBtn.disabled = true;
+    emailTemplateMsg.textContent = 'Enviando...';
+    emailTemplateMsg.style.color = '#7a8a99';
+    try {
+      const res = await fetch('/api/admin/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        emailTemplateMsg.textContent = 'Mail de prueba enviado ✓';
+        emailTemplateMsg.style.color = '#2a8a4a';
+      } else {
+        emailTemplateMsg.textContent = data.error || 'No se pudo enviar';
+        emailTemplateMsg.style.color = '#d21f1f';
+      }
+    } catch (e) {
+      emailTemplateMsg.textContent = 'Error de conexión';
+      emailTemplateMsg.style.color = '#d21f1f';
+    } finally {
+      sendTestEmailBtn.disabled = false;
     }
   });
 

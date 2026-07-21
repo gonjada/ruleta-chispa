@@ -42,6 +42,7 @@
             <th>Peso</th>
             <th>Probabilidad</th>
             <th>Activo</th>
+            <th>Enviar mail</th>
             <th></th>
           </tr>
         </thead>
@@ -54,6 +55,28 @@
         <button id="add-prize-btn" class="btn-primary">+ Agregar premio</button>
       </div>
       <p id="prizes-msg" class="msg"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Email de premio</h2>
+        <span class="hint">Se manda automáticamente cuando alguien gana un premio con "Enviar mail" tildado. Usá <code>{{premio}}</code> donde quieras que aparezca el nombre del premio ganado.</span>
+      </div>
+      <p id="smtp-status" class="hint"></p>
+      <div class="email-field">
+        <label>Asunto</label>
+        <input id="email-subject" type="text" placeholder="Asunto del mail" />
+      </div>
+      <div class="email-field">
+        <label>Cuerpo del mail</label>
+        <textarea id="email-body" rows="6" placeholder="Escribí el mensaje. Usá {{premio}} para insertar el premio ganado."></textarea>
+      </div>
+      <div class="email-actions">
+        <button id="save-email-template-btn" class="btn-primary">Guardar plantilla</button>
+        <input id="test-email-to" type="text" placeholder="tu-mail@ejemplo.com" />
+        <button id="send-test-email-btn" class="btn-secondary">Enviar mail de prueba</button>
+      </div>
+      <p id="email-template-msg" class="msg"></p>
     </section>
 
     <section class="card">

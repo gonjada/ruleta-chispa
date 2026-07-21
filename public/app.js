@@ -50,7 +50,7 @@
     wheelEl.style.background = `conic-gradient(${gradientParts.join(',')})`;
 
     wheelEl.innerHTML = '';
-    const fontSize = n > 10 ? 24 : n > 7 ? 28 : 32;
+    const fontSize = n > 10 ? 30 : n > 7 ? 36 : 42;
     prizes.forEach((p, i) => {
       const angle = step * i + step / 2;
       const label = document.createElement('div');
