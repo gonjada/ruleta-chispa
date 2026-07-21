@@ -1,11 +1,38 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 const nodemailer = require('nodemailer');
+const multer = require('multer');
+const sizeOf = require('image-size');
 const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// -------- Banner del mail (zocalo) --------
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+const BANNER_PATH = path.join(uploadsDir, 'email-banner.jpg');
+
+function bannerExists() {
+  try {
+    return fs.existsSync(BANNER_PATH) && fs.statSync(BANNER_PATH).size > 0;
+  } catch (e) {
+    return false;
+  }
+}
+const BANNER_MAX_WIDTH = 800;
+const BANNER_MAX_HEIGHT = 400;
+
+const bannerUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 3 * 1024 * 1024 }, // 3MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'image/jpeg') return cb(null, true);
+    cb(new Error('El banner debe ser un archivo JPG'));
+  }
+});
 
 app.use(express.json());
 app.use(session({
@@ -37,20 +64,49 @@ function pickWeightedPrize(activePrizes) {
 let cachedTransporter = null;
 let cachedTransporterKey = null;
 
-function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  if (!host) return null; // Email no configurado todavia: la app sigue funcionando sin mandar mail.
+// Devuelve la configuracion SMTP activa: primero la cargada desde el panel
+// admin (guardada en la base), y si no hay nada cargado ahi, cae a las
+// variables de entorno de Render (compatibilidad con la configuracion
+// anterior). Devuelve null si no hay SMTP configurado por ningun lado.
+function getSmtpConfig() {
+  const dbConfig = db.get('config.smtp').value() || {};
+  if (dbConfig.host) {
+    return {
+      source: 'db',
+      host: dbConfig.host,
+      port: Number(dbConfig.port) || 587,
+      secure: !!dbConfig.secure,
+      user: dbConfig.user || '',
+      pass: dbConfig.pass || '',
+      from: dbConfig.from || dbConfig.user || ''
+    };
+  }
+  if (process.env.SMTP_HOST) {
+    return {
+      source: 'env',
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
+      user: process.env.SMTP_USER || '',
+      pass: process.env.SMTP_PASS || '',
+      from: process.env.SMTP_FROM || process.env.SMTP_USER || ''
+    };
+  }
+  return null;
+}
 
-  const key = [host, process.env.SMTP_PORT, process.env.SMTP_USER].join('|');
+function getTransporter() {
+  const cfg = getSmtpConfig();
+  if (!cfg) return null; // Email no configurado todavia: la app sigue funcionando sin mandar mail.
+
+  const key = [cfg.source, cfg.host, cfg.port, cfg.user, cfg.secure].join('|');
   if (cachedTransporter && cachedTransporterKey === key) return cachedTransporter;
 
   cachedTransporter = nodemailer.createTransport({
-    host,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-      : undefined
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.secure,
+    auth: cfg.user ? { user: cfg.user, pass: cfg.pass } : undefined
   });
   cachedTransporterKey = key;
   return cachedTransporter;
@@ -59,6 +115,11 @@ function getTransporter() {
 function buildEmailHtml(bodyText) {
   const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
   const logoUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/images/logo-atilios-white.png';
+  const hasBanner = bannerExists();
+  const bannerUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/uploads/email-banner.jpg?v=' + Date.now();
+  const bannerHtml = hasBanner
+    ? `<div style="line-height:0;"><img src="${bannerUrl}" alt="" width="480" style="width:100%;max-width:480px;height:auto;display:block;" /></div>`
+    : '';
   return `
   <div style="background:#0c2c42;padding:40px 0;font-family:Georgia,'Times New Roman',serif;">
     <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;">
@@ -68,6 +129,7 @@ function buildEmailHtml(bodyText) {
       <div style="padding:36px 30px;color:#1c2b36;font-size:17px;line-height:1.6;">
         ${safeBody}
       </div>
+      ${bannerHtml}
       <div style="padding:18px 30px;background:#f2f6f8;color:#8393a0;font-size:12px;text-align:center;">
         Este mail fue enviado automaticamente desde la ruleta de premios de Atilio's Sandwich Co.
       </div>
@@ -78,6 +140,7 @@ function buildEmailHtml(bodyText) {
 async function sendPrizeEmail(to, prizeLabel) {
   const transporter = getTransporter();
   if (!transporter) return { sent: false, reason: 'SMTP no configurado' };
+  const cfg = getSmtpConfig();
 
   const subjectTemplate = db.get('config.emailSubject').value() || '¡Ganaste!';
   const bodyTemplate = db.get('config.emailBody').value() || 'Ganaste: {{premio}}';
@@ -86,7 +149,7 @@ async function sendPrizeEmail(to, prizeLabel) {
 
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      from: cfg.from,
       to,
       subject,
       text: bodyText,
@@ -260,7 +323,7 @@ app.get('/api/admin/email-template', requireAuth, (req, res) => {
   res.json({
     subject: db.get('config.emailSubject').value() || '',
     body: db.get('config.emailBody').value() || '',
-    smtpConfigured: !!process.env.SMTP_HOST
+    smtpConfigured: !!getSmtpConfig()
   });
 });
 
@@ -279,12 +342,106 @@ app.post('/api/admin/test-email', requireAuth, async (req, res) => {
   if (!to || !/^\S+@\S+\.\S+$/.test(to)) {
     return res.status(400).json({ ok: false, error: 'Email invalido' });
   }
-  if (!process.env.SMTP_HOST) {
+  if (!getSmtpConfig()) {
     return res.status(400).json({ ok: false, error: 'SMTP no configurado en el servidor todavia' });
   }
   const result = await sendPrizeEmail(String(to).trim().toLowerCase(), 'Premio de prueba');
   if (result.sent) return res.json({ ok: true });
   return res.status(500).json({ ok: false, error: result.reason || 'No se pudo enviar el mail' });
+});
+
+// -------- Admin: configuracion SMTP (se guarda en la base, no en el codigo) --------
+app.get('/api/admin/smtp-config', requireAuth, (req, res) => {
+  const cfg = db.get('config.smtp').value() || {};
+  const envAvailable = !!process.env.SMTP_HOST;
+  res.json({
+    host: cfg.host || '',
+    port: cfg.port || 587,
+    user: cfg.user || '',
+    from: cfg.from || '',
+    secure: !!cfg.secure,
+    hasPassword: !!cfg.pass,
+    configuredHere: !!cfg.host,
+    usingEnvFallback: !cfg.host && envAvailable
+  });
+});
+
+app.post('/api/admin/smtp-config', requireAuth, (req, res) => {
+  const { host, port, user, pass, from, secure } = req.body || {};
+  if (!host) {
+    return res.status(400).json({ ok: false, error: 'Falta el host SMTP' });
+  }
+  const existing = db.get('config.smtp').value() || {};
+  const updated = {
+    host: String(host).trim(),
+    port: Number(port) || 587,
+    user: user !== undefined ? String(user).trim() : (existing.user || ''),
+    from: from !== undefined ? String(from).trim() : (existing.from || ''),
+    secure: !!secure,
+    // Si no mandan una clave nueva, se conserva la que ya estaba guardada
+    // (asi Maru no tiene que reescribir la clave cada vez que edita otro campo).
+    pass: (pass && String(pass).trim()) ? String(pass).trim() : (existing.pass || '')
+  };
+  db.set('config.smtp', updated).write();
+  cachedTransporter = null;
+  cachedTransporterKey = null;
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/smtp-config', requireAuth, (req, res) => {
+  db.set('config.smtp', { host: '', port: 587, user: '', pass: '', from: '', secure: false }).write();
+  cachedTransporter = null;
+  cachedTransporterKey = null;
+  res.json({ ok: true });
+});
+
+// -------- Admin: banner (zocalo) del mail de premio --------
+app.get('/api/admin/email-banner', requireAuth, (req, res) => {
+  const has = bannerExists();
+  res.json({ hasBanner: has, url: has ? ('/uploads/email-banner.jpg?v=' + Date.now()) : null });
+});
+
+app.post('/api/admin/email-banner', requireAuth, (req, res) => {
+  bannerUpload.single('banner')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ ok: false, error: err.message || 'No se pudo subir el banner' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ ok: false, error: 'Falta el archivo del banner' });
+    }
+    let dimensions;
+    try {
+      dimensions = sizeOf(req.file.buffer);
+    } catch (e) {
+      return res.status(400).json({ ok: false, error: 'El archivo no parece ser una imagen JPG valida' });
+    }
+    if (dimensions.width > BANNER_MAX_WIDTH || dimensions.height > BANNER_MAX_HEIGHT) {
+      return res.status(400).json({
+        ok: false,
+        error: `La imagen es de ${dimensions.width}x${dimensions.height}px. El máximo permitido es ${BANNER_MAX_WIDTH}x${BANNER_MAX_HEIGHT}px.`
+      });
+    }
+    fs.writeFileSync(BANNER_PATH, req.file.buffer);
+    res.json({ ok: true, url: '/uploads/email-banner.jpg?v=' + Date.now() });
+  });
+});
+
+app.delete('/api/admin/email-banner', requireAuth, (req, res) => {
+  try {
+    if (fs.existsSync(BANNER_PATH)) fs.unlinkSync(BANNER_PATH);
+    return res.json({ ok: true });
+  } catch (err) {
+    // Si por algun motivo no se puede borrar el archivo, lo vaciamos en vez de
+    // fallar: un JPG de 0 bytes no es una imagen valida, asi que buildEmailHtml
+    // (via fs.existsSync + sizeOf mas adelante) deja de incluirlo igual.
+    try {
+      fs.writeFileSync(BANNER_PATH, Buffer.alloc(0));
+    } catch (err2) {
+      console.error('No se pudo borrar ni vaciar el banner:', err2.message);
+      return res.status(500).json({ ok: false, error: 'No se pudo quitar el banner' });
+    }
+    return res.json({ ok: true });
+  }
 });
 
 // -------- Admin: cambiar la clave --------

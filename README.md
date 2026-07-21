@@ -48,29 +48,33 @@ Clave por defecto: **chispa2026**
 
 ## Cómo configurar el envío de mails
 
-El mail al ganador se manda por SMTP. Por seguridad, el asistente no puede cargar tus credenciales de mail — las tenés que agregar vos misma directamente en Render (nunca se escriben en el código ni las ve nadie más que vos).
+El mail al ganador se manda por SMTP. Ahora se configura **directamente desde el panel admin**, sin tocar Render ni el código — vos misma cargás tus credenciales SMTP en un formulario y se guardan en la base de la app (nunca las ve el asistente, ni quedan en el código ni en GitHub).
 
 **Pasos:**
 
 1. Conseguí credenciales SMTP. Opciones simples:
    - **Brevo (ex Sendinblue)**: plan gratis, 300 mails/día. Te registrás en [brevo.com](https://www.brevo.com), y en "SMTP & API" te dan host, usuario y clave SMTP.
    - **Gmail con "contraseña de aplicación"**: más simple si ya tenés Gmail, pero menos robusto para volumen. Se genera desde la configuración de seguridad de tu cuenta de Google.
-2. En Render, entrá al servicio `ruleta-chispa` → **Environment** → agregá estas variables:
+2. Entrá a `/admin` → sección **"Configuración SMTP"** y completá:
 
-   | Variable | Ejemplo |
+   | Campo | Ejemplo |
    |---|---|
-   | `SMTP_HOST` | `smtp-relay.brevo.com` |
-   | `SMTP_PORT` | `587` |
-   | `SMTP_SECURE` | `false` |
-   | `SMTP_USER` | tu usuario SMTP |
-   | `SMTP_PASS` | tu clave SMTP |
-   | `SMTP_FROM` | `Atilio's Sandwich Co. <noreply@atilios.com>` |
+   | Host SMTP | `smtp-relay.brevo.com` |
+   | Puerto | `587` |
+   | Usuario | tu usuario SMTP |
+   | Contraseña | tu clave SMTP |
+   | Remitente (From) | `Atilio's Sandwich Co. <noreply@atilios.com>` |
+   | Conexión segura (SSL) | tildado solo si usás el puerto 465 |
 
-3. Guardá — Render reinicia el servicio solo.
-4. Entrá a `/admin` → sección **"Email de premio"**: ahí ves si quedó configurado ("✓ Envío de mail configurado"), podés editar el asunto y el cuerpo del mail (con `{{premio}}` como comodín para el nombre del premio ganado), y mandar un mail de prueba a tu propia casilla antes de lanzarlo.
+3. Guardá — el estado se actualiza al instante ("✓ Configuración SMTP guardada acá en el panel").
+4. En la sección **"Email de premio"** (debajo), editá el asunto y el cuerpo del mail (con `{{premio}}` como comodín para el nombre del premio ganado), y mandá un mail de prueba a tu propia casilla antes de lanzarlo.
 5. En la tabla de premios, cada uno tiene un tilde **"Enviar mail"** — destildalo en los premios que no querés que generen mail (por ejemplo "Segui participando" o "Casi Casi").
 
-Si no configurás estas variables, la app funciona igual (la ruleta gira, el premio se registra), simplemente no se manda ningún mail.
+Si no cargás estos datos, la app funciona igual (la ruleta gira, el premio se registra), simplemente no se manda ningún mail. También podés seguir usando variables de entorno en Render (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) como alternativa: la app las usa automáticamente si no hay nada cargado en el panel.
+
+### Banner del mail (zócalo)
+
+En la sección **"Banner del mail (zócalo)"** del panel admin podés subir una imagen JPG que se agrega abajo del texto en el mail de premio (por ejemplo, una promo o el logo con más detalle). Tamaño máximo: **800x400px** — si subís una más grande, la app te avisa y no la guarda. Podés quitarla en cualquier momento con "Quitar banner".
 
 ## Cómo publicarlo online (para que la gente lo use desde su celular)
 
@@ -87,28 +91,40 @@ Alternativas equivalentes: Railway, Fly.io o un VPS propio. Si preferís, te pue
 
 ### Importante sobre los datos
 
-Los premios, la clave y el registro de participantes se guardan en el archivo `data/db.json`. En Render (plan free) el disco no es 100% persistente entre reinicios del servicio — si vas a usar esto para un evento real y te importa no perder el registro, avisame y le agrego un "disco persistente" (Render lo ofrece pago) o lo paso a una base de datos en la nube (por ejemplo, Postgres gratis en Neon o Supabase). Para probarlo o usarlo en un evento corto, funciona perfecto tal cual está.
+Los premios, la clave, el registro de participantes, la configuración SMTP y el banner del mail se guardan en `data/db.json` y `public/uploads/`. En Render (plan free) el disco no es 100% persistente entre reinicios del servicio — si vas a usar esto para un evento real y te importa no perder esos datos (o tener que volver a cargar la config SMTP y el banner después de cada reinicio), avisame y le agrego un "disco persistente" (Render lo ofrece pago) o lo paso a una base de datos en la nube (por ejemplo, Postgres gratis en Neon o Supabase). Para probarlo o usarlo en un evento corto, funciona perfecto tal cual está.
 
 ## Estructura del proyecto
 
 ```
 ruleta-app/
-├── server.js          → servidor Express, toda la API y el envío de mails
+├── server.js          → servidor Express, toda la API, SMTP y el envío de mails
 ├── db.js              → base de datos (lowdb, archivo JSON)
 ├── package.json
-├── data/db.json        → acá se guardan premios, clave, registro y plantilla de mail
+├── data/db.json        → acá se guardan premios, clave, registro, plantilla de mail y config SMTP
 └── public/
     ├── index.html   → pantalla de juego (login + ruleta)
     ├── admin.html   → panel de administración
     ├── style.css    → estilos de la ruleta
     ├── admin.css    → estilos del panel admin
     ├── app.js       → lógica de la ruleta y el giro
-    └── admin.js     → lógica del panel admin
+    ├── admin.js     → lógica del panel admin
+    ├── fonts/       → fuentes oficiales de Atilio's (Recoleta Bold, TT Trailers Trial)
+    ├── images/      → logo real de Atilio's (PNG blanco)
+    └── uploads/     → banner del mail que subís desde el panel admin (se genera solo)
 ```
 
 ## Sobre el logo de Atilio's
 
-El logo del pie de página y del header del mail está recreado en HTML/CSS con tipografía (fuente "Bitter"), no es el archivo de imagen real del logo — el asistente no tuvo acceso al archivo de imagen que pegaste en el chat, solo lo vio como referencia visual. Si me pasás el logo como archivo adjunto (PNG con fondo transparente, idealmente en blanco), lo reemplazo por la imagen real.
+El logo del pie de página y del mail usa el archivo real que me pasaste (PNG blanco con fondo transparente), en `public/images/logo-atilios-white.png`.
+
+El header del mail usa una fuente serif estándar (Georgia) en vez de las fuentes de marca, porque la mayoría de los clientes de mail (Gmail, Outlook, etc.) no soportan fuentes personalizadas — usar una fuente web-safe ahí garantiza que se vea bien en cualquier bandeja de entrada.
+
+## Fuentes oficiales de Atilio's
+
+La app usa dos fuentes propias de la marca, subidas a `public/fonts/` y cargadas con `@font-face` en `style.css` (sin depender de Google Fonts ni de internet):
+
+- **Recoleta Bold** (`recoleta-bold.otf`): título "Ruleta de Premios", "ATILIO'S" del pie de página, títulos del modal de premio.
+- **TT Trailers Trial Regular** (`tt-trailers-regular.ttf`): botones, "sandwich co." del pie de página, premios escritos en la ruleta, nombre del premio ganado en el modal.
 
 ## Posibles mejoras a futuro
 

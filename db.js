@@ -22,7 +22,11 @@ db.defaults({
     // Clave unica: sirve tanto para entrar a jugar como para entrar al panel admin
     password: 'chispa2026',
     emailSubject: DEFAULT_EMAIL_SUBJECT,
-    emailBody: DEFAULT_EMAIL_BODY
+    emailBody: DEFAULT_EMAIL_BODY,
+    // Configuracion SMTP cargada desde el panel admin (alternativa a las
+    // variables de entorno de Render). Si "host" esta vacio, el servidor usa
+    // las variables de entorno como respaldo.
+    smtp: { host: '', port: 587, user: '', pass: '', from: '', secure: false }
   },
   prizes: [
     { id: 1, label: '10% OFF', weight: 20, active: true, sendEmail: true },
@@ -60,6 +64,9 @@ if (db.get('config.emailSubject').value() === undefined) {
 }
 if (db.get('config.emailBody').value() === undefined) {
   db.set('config.emailBody', DEFAULT_EMAIL_BODY).write();
+}
+if (db.get('config.smtp').value() === undefined) {
+  db.set('config.smtp', { host: '', port: 587, user: '', pass: '', from: '', secure: false }).write();
 }
 
 module.exports = db;
