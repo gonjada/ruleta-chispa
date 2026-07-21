@@ -50,27 +50,39 @@
     wheelEl.style.background = `conic-gradient(${gradientParts.join(',')})`;
 
     wheelEl.innerHTML = '';
-    const maxFont = n > 10 ? 34 : n > 7 ? 40 : 46;
     prizes.forEach((p, i) => {
       const angle = step * i + step / 2;
       const label = document.createElement('div');
       label.className = 'slice-label';
+      // El contenedor solo se encarga de UBICAR el texto en el sector correcto.
       label.style.transform = `rotate(${angle}deg)`;
+
       const span = document.createElement('span');
       span.textContent = p.label;
-      // Evita texto "cabeza abajo": los premios que caen en la mitad izquierda
-      // de la ruleta (entre 90° y 270°) se giran 180° extra (sobre su propio
-      // centro, sin mover su posición) para que se lean igual de bien que los
-      // de la derecha, como el "20% OFF" de referencia.
+
+      // Orientacion "radial" (girada 90° respecto de como estaba antes): el
+      // texto corre a lo largo del radio en vez de a lo largo del arco. Esto
+      // evita que los premios se pisen entre sectores vecinos (el texto ocupa
+      // poco ancho tangencial) y es como pidió Maru, en el estilo del "20% OFF"
+      // de referencia. Se suma un giro de 180° extra para los premios de la
+      // mitad "inferior" (ángulo entre 180° y 360°) para que no queden cabeza
+      // abajo, sin mover su posición (la rotación es sobre el propio centro
+      // del span, no sobre el centro de la ruleta).
       const normalized = ((angle % 360) + 360) % 360;
-      const flipped = normalized > 90 && normalized < 270;
-      if (flipped) span.style.transform = 'rotate(180deg)';
-      // Una sola linea "de costado" siempre: el tamaño de letra se achica según
-      // el largo del texto para que nunca se corte en dos renglones.
+      const needsFlip = normalized > 180 && normalized < 360;
+      const spanRotation = -90 + (needsFlip ? 180 : 0);
+      span.style.transform = `rotate(${spanRotation}deg)`;
+
+      // Tamaño de letra y salto de renglón según el largo del texto: los
+      // premios cortos ("2x1", "20% OFF") entran en un renglón grande; los
+      // largos ("Segui participando") se acomodan en dos renglones más chicos.
       const len = p.label.length;
-      const fitFont = Math.round(340 / (len * 0.62));
-      const fontSize = Math.max(20, Math.min(maxFont, fitFont));
+      let fontSize;
+      if (len <= 7) fontSize = 42;
+      else if (len <= 12) fontSize = 32;
+      else fontSize = 26;
       span.style.fontSize = fontSize + 'px';
+
       label.appendChild(span);
       wheelEl.appendChild(label);
     });

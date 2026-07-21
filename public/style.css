@@ -213,18 +213,18 @@ html, body {
 }
 .slice-label span {
   position: absolute;
-  top: 110px;
-  left: -170px;
-  width: 340px;
+  top: 100px;
+  left: -100px;
+  width: 200px;
   text-align: center;
   display: block;
-  white-space: nowrap;
+  white-space: normal;
   color: #fff;
   font-family: 'Recoleta', Georgia, serif;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  line-height: 1;
+  line-height: 1.08;
   text-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
