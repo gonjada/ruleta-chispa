@@ -58,12 +58,12 @@ function getTransporter() {
 
 function buildEmailHtml(bodyText) {
   const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
+  const logoUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/images/logo-atilios-white.png';
   return `
   <div style="background:#0c2c42;padding:40px 0;font-family:Georgia,'Times New Roman',serif;">
     <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;">
       <div style="background:#1c4b6e;padding:30px 20px;text-align:center;">
-        <div style="color:#ffffff;font-weight:900;font-size:30px;letter-spacing:2px;">ATILIO'S</div>
-        <div style="color:#ffffff;opacity:0.9;font-size:15px;letter-spacing:2px;margin-top:-2px;">sandwich co.</div>
+        <img src="${logoUrl}" alt="Atilio's Sandwich Co." width="220" style="max-width:220px;height:auto;display:inline-block;" />
       </div>
       <div style="padding:36px 30px;color:#1c2b36;font-size:17px;line-height:1.6;">
         ${safeBody}
