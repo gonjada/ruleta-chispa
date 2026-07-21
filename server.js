@@ -142,10 +142,14 @@ async function sendPrizeEmail(to, prizeLabel) {
   if (!transporter) return { sent: false, reason: 'SMTP no configurado' };
   const cfg = getSmtpConfig();
 
+  // Fecha del dia en que se manda el mail (no la fecha en que jugo la persona),
+  // para el placeholder {{fecha}} usado en la frase de validez del premio.
+  const fecha = new Date().toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+
   const subjectTemplate = db.get('config.emailSubject').value() || '¡Ganaste!';
   const bodyTemplate = db.get('config.emailBody').value() || 'Ganaste: {{premio}}';
-  const subject = subjectTemplate.replace(/{{premio}}/g, prizeLabel);
-  const bodyText = bodyTemplate.replace(/{{premio}}/g, prizeLabel);
+  const subject = subjectTemplate.replace(/{{premio}}/g, prizeLabel).replace(/{{fecha}}/g, fecha);
+  const bodyText = bodyTemplate.replace(/{{premio}}/g, prizeLabel).replace(/{{fecha}}/g, fecha);
 
   try {
     await transporter.sendMail({
@@ -306,6 +310,23 @@ app.delete('/api/admin/registrations/:id', requireAuth, (req, res) => {
   const id = Number(req.params.id);
   db.get('registrations').remove({ id }).write();
   res.json({ ok: true });
+});
+
+// Reenvia el mail de premio a un participante ya registrado (por si no le llego,
+// o para reenviarlo si lo pide de nuevo)
+app.post('/api/admin/registrations/:id/resend-email', requireAuth, async (req, res) => {
+  const id = Number(req.params.id);
+  const reg = db.get('registrations').find({ id }).value();
+  if (!reg) return res.status(404).json({ ok: false, error: 'Registro no encontrado' });
+  if (!getSmtpConfig()) {
+    return res.status(400).json({ ok: false, error: 'SMTP no configurado en el servidor todavia' });
+  }
+  const result = await sendPrizeEmail(reg.email, reg.prizeLabel);
+  if (result.sent) {
+    db.get('registrations').find({ id }).assign({ emailSent: true }).write();
+    return res.json({ ok: true });
+  }
+  return res.status(500).json({ ok: false, error: result.reason || 'No se pudo enviar el mail' });
 });
 
 app.get('/api/admin/registrations.csv', requireAuth, (req, res) => {
