@@ -118,7 +118,7 @@ html, body {
   margin: 6px 0 0;
 }
 #screen-login .error-msg { color: #d21f1f; }
-#screen-game .error-msg { color: #fff3b0; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+#screen-game .error-msg { color: #fff3b0; text-shadow: 0 1px 3px rgba(0,0,0,0.4); font-size: 44px; }
 
 /* ---------- Game screen ---------- */
 .game-title {
@@ -323,7 +323,7 @@ html, body {
   margin: 10px 0 20px;
 }
 .prize-result {
-  font-size: 30px;
+  font-size: 51px;
   color: #4a6478;
   margin: 0;
 }
