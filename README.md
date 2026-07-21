@@ -2,6 +2,14 @@
 
 Web app de ruleta de premios con clave de acceso, pantalla optimizada para celular/tablet (1080x1920) y panel de administración.
 
+**Ya está deployada y online:**
+- Ruleta: https://ruleta-chispa.onrender.com
+- Panel admin: https://ruleta-chispa.onrender.com/admin
+- Repo: https://github.com/gonjada/ruleta-chispa
+- Clave actual: `chispa2026` (cambiala desde el panel admin apenas puedas)
+
+Nota: es el plan free de Render, así que si nadie la usa por un rato "se duerme" y la primera visita tarda ~50 segundos en cargar. Para un evento en vivo, conviene visitar el link un ratito antes para "despertarla", o upgradear a un plan pago si te importa que cargue siempre al instante.
+
 ## ¿Qué incluye?
 
 - **Pantalla de juego**: pide clave de ingreso, después el visitante carga su email y gira la ruleta con el botón "¡Girá la Ruleta y Ganá!".
@@ -9,6 +17,7 @@ Web app de ruleta de premios con clave de acceso, pantalla optimizada para celul
 - **Panel de administración** (`/admin`): editar el texto de cada premio, su probabilidad (peso), activarlos/desactivarlos, agregar o eliminar premios, ver y exportar (CSV) el registro de participantes, y cambiar la clave de acceso.
 - **Un giro por email**: si alguien intenta jugar de nuevo con el mismo mail, la app le avisa y le muestra qué premio ganó la primera vez (no gira de nuevo). Desde el panel admin podés borrar un participante puntual o vaciar todo el registro si necesitás volver a probar.
 - **Una sola clave** sirve tanto para entrar a jugar como para entrar al panel admin (como pediste). La clave por defecto es `chispa2026` — cambiala apenas lo subas.
+- **Mail automático al ganador**: cuando alguien gana un premio, se le puede mandar un mail automático con el premio. Es personalizable (asunto y cuerpo del mensaje) y podés elegir premio por premio si manda mail o no, con un tilde en el panel admin. Ver la sección "Cómo configurar el envío de mails" más abajo.
 
 ## Cómo probarlo en tu computadora
 
@@ -37,6 +46,32 @@ Clave por defecto: **chispa2026**
 3. En "Registro de participantes" ves cada email, el premio que ganó y la fecha/hora. Podés exportarlo a CSV con un clic.
 4. En "Clave de acceso" podés cambiar la clave en cualquier momento.
 
+## Cómo configurar el envío de mails
+
+El mail al ganador se manda por SMTP. Por seguridad, el asistente no puede cargar tus credenciales de mail — las tenés que agregar vos misma directamente en Render (nunca se escriben en el código ni las ve nadie más que vos).
+
+**Pasos:**
+
+1. Conseguí credenciales SMTP. Opciones simples:
+   - **Brevo (ex Sendinblue)**: plan gratis, 300 mails/día. Te registrás en [brevo.com](https://www.brevo.com), y en "SMTP & API" te dan host, usuario y clave SMTP.
+   - **Gmail con "contraseña de aplicación"**: más simple si ya tenés Gmail, pero menos robusto para volumen. Se genera desde la configuración de seguridad de tu cuenta de Google.
+2. En Render, entrá al servicio `ruleta-chispa` → **Environment** → agregá estas variables:
+
+   | Variable | Ejemplo |
+   |---|---|
+   | `SMTP_HOST` | `smtp-relay.brevo.com` |
+   | `SMTP_PORT` | `587` |
+   | `SMTP_SECURE` | `false` |
+   | `SMTP_USER` | tu usuario SMTP |
+   | `SMTP_PASS` | tu clave SMTP |
+   | `SMTP_FROM` | `Atilio's Sandwich Co. <noreply@atilios.com>` |
+
+3. Guardá — Render reinicia el servicio solo.
+4. Entrá a `/admin` → sección **"Email de premio"**: ahí ves si quedó configurado ("✓ Envío de mail configurado"), podés editar el asunto y el cuerpo del mail (con `{{premio}}` como comodín para el nombre del premio ganado), y mandar un mail de prueba a tu propia casilla antes de lanzarlo.
+5. En la tabla de premios, cada uno tiene un tilde **"Enviar mail"** — destildalo en los premios que no querés que generen mail (por ejemplo "Segui participando" o "Casi Casi").
+
+Si no configurás estas variables, la app funciona igual (la ruleta gira, el premio se registra), simplemente no se manda ningún mail.
+
 ## Cómo publicarlo online (para que la gente lo use desde su celular)
 
 La forma más simple y gratuita es con **Render**:
@@ -58,10 +93,10 @@ Los premios, la clave y el registro de participantes se guardan en el archivo `d
 
 ```
 ruleta-app/
-├── server.js          → servidor Express y toda la API
+├── server.js          → servidor Express, toda la API y el envío de mails
 ├── db.js              → base de datos (lowdb, archivo JSON)
 ├── package.json
-├── data/db.json        → acá se guardan premios, clave y registro
+├── data/db.json        → acá se guardan premios, clave, registro y plantilla de mail
 └── public/
     ├── index.html   → pantalla de juego (login + ruleta)
     ├── admin.html   → panel de administración
@@ -71,10 +106,13 @@ ruleta-app/
     └── admin.js     → lógica del panel admin
 ```
 
+## Sobre el logo de Atilio's
+
+El logo del pie de página y del header del mail está recreado en HTML/CSS con tipografía (fuente "Bitter"), no es el archivo de imagen real del logo — el asistente no tuvo acceso al archivo de imagen que pegaste en el chat, solo lo vio como referencia visual. Si me pasás el logo como archivo adjunto (PNG con fondo transparente, idealmente en blanco), lo reemplazo por la imagen real.
+
 ## Posibles mejoras a futuro
 
-- Logo de marca en la pantalla de juego.
+- Logo real de Atilio's como imagen (en vez de texto estilizado).
 - Sonido al girar / ganar.
-- Envío automático de mail al ganador.
 
 Si querés que sume alguna de estas, avisame.

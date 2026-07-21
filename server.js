@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const nodemailer = require('nodemailer');
 const db = require('./db');
 
 const app = express();
@@ -32,6 +33,72 @@ function pickWeightedPrize(activePrizes) {
   return activePrizes[activePrizes.length - 1];
 }
 
+// -------- Email de premio --------
+let cachedTransporter = null;
+let cachedTransporterKey = null;
+
+function getTransporter() {
+  const host = process.env.SMTP_HOST;
+  if (!host) return null; // Email no configurado todavia: la app sigue funcionando sin mandar mail.
+
+  const key = [host, process.env.SMTP_PORT, process.env.SMTP_USER].join('|');
+  if (cachedTransporter && cachedTransporterKey === key) return cachedTransporter;
+
+  cachedTransporter = nodemailer.createTransport({
+    host,
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
+    auth: process.env.SMTP_USER
+      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+      : undefined
+  });
+  cachedTransporterKey = key;
+  return cachedTransporter;
+}
+
+function buildEmailHtml(bodyText) {
+  const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
+  return `
+  <div style="background:#0c2c42;padding:40px 0;font-family:Georgia,'Times New Roman',serif;">
+    <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;">
+      <div style="background:#1c4b6e;padding:30px 20px;text-align:center;">
+        <div style="color:#ffffff;font-weight:900;font-size:30px;letter-spacing:2px;">ATILIO'S</div>
+        <div style="color:#ffffff;opacity:0.9;font-size:15px;letter-spacing:2px;margin-top:-2px;">sandwich co.</div>
+      </div>
+      <div style="padding:36px 30px;color:#1c2b36;font-size:17px;line-height:1.6;">
+        ${safeBody}
+      </div>
+      <div style="padding:18px 30px;background:#f2f6f8;color:#8393a0;font-size:12px;text-align:center;">
+        Este mail fue enviado automaticamente desde la ruleta de premios de Atilio's Sandwich Co.
+      </div>
+    </div>
+  </div>`;
+}
+
+async function sendPrizeEmail(to, prizeLabel) {
+  const transporter = getTransporter();
+  if (!transporter) return { sent: false, reason: 'SMTP no configurado' };
+
+  const subjectTemplate = db.get('config.emailSubject').value() || '¡Ganaste!';
+  const bodyTemplate = db.get('config.emailBody').value() || 'Ganaste: {{premio}}';
+  const subject = subjectTemplate.replace(/{{premio}}/g, prizeLabel);
+  const bodyText = bodyTemplate.replace(/{{premio}}/g, prizeLabel);
+
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to,
+      subject,
+      text: bodyText,
+      html: buildEmailHtml(bodyText)
+    });
+    return { sent: true };
+  } catch (err) {
+    console.error('Error enviando mail de premio:', err.message);
+    return { sent: false, reason: err.message };
+  }
+}
+
 // -------- Auth --------
 app.post('/api/login', (req, res) => {
   const { password } = req.body || {};
@@ -61,7 +128,7 @@ app.get('/api/prizes', requireAuth, (req, res) => {
 });
 
 // -------- Spin --------
-app.post('/api/spin', requireAuth, (req, res) => {
+app.post('/api/spin', requireAuth, async (req, res) => {
   const { email } = req.body || {};
   if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
     return res.status(400).json({ ok: false, error: 'Email invalido' });
@@ -86,13 +153,15 @@ app.post('/api/spin', requireAuth, (req, res) => {
   const winner = pickWeightedPrize(activePrizes);
   const index = activePrizes.findIndex(p => p.id === winner.id);
 
-  db.get('registrations').push({
+  const registration = {
     id: Date.now(),
     email: normalizedEmail,
     prizeId: winner.id,
     prizeLabel: winner.label,
-    date: new Date().toISOString()
-  }).write();
+    date: new Date().toISOString(),
+    emailSent: false
+  };
+  db.get('registrations').push(registration).write();
 
   res.json({
     ok: true,
@@ -101,6 +170,18 @@ app.post('/api/spin', requireAuth, (req, res) => {
     index,
     total: activePrizes.length
   });
+
+  // El mail se manda despues de responder, para no hacer esperar al usuario girando la ruleta.
+  if (winner.sendEmail !== false) {
+    try {
+      const result = await sendPrizeEmail(normalizedEmail, winner.label);
+      if (result.sent) {
+        db.get('registrations').find({ id: registration.id }).assign({ emailSent: true }).write();
+      }
+    } catch (err) {
+      console.error('Error en envio de mail post-giro:', err.message);
+    }
+  }
 });
 
 // -------- Admin: premios --------
@@ -110,10 +191,16 @@ app.get('/api/admin/prizes', requireAuth, (req, res) => {
 
 app.post('/api/admin/prizes', requireAuth, (req, res) => {
   // Crea un premio nuevo
-  const { label, weight } = req.body || {};
+  const { label, weight, sendEmail } = req.body || {};
   if (!label) return res.status(400).json({ ok: false, error: 'Falta el texto del premio' });
   const nextId = db.get('nextPrizeId').value();
-  const prize = { id: nextId, label: String(label).trim(), weight: Number(weight) || 1, active: true };
+  const prize = {
+    id: nextId,
+    label: String(label).trim(),
+    weight: Number(weight) || 1,
+    active: true,
+    sendEmail: sendEmail === undefined ? true : !!sendEmail
+  };
   db.get('prizes').push(prize).write();
   db.set('nextPrizeId', nextId + 1).write();
   res.json({ ok: true, prize });
@@ -121,13 +208,14 @@ app.post('/api/admin/prizes', requireAuth, (req, res) => {
 
 app.put('/api/admin/prizes/:id', requireAuth, (req, res) => {
   const id = Number(req.params.id);
-  const { label, weight, active } = req.body || {};
+  const { label, weight, active, sendEmail } = req.body || {};
   const prize = db.get('prizes').find({ id }).value();
   if (!prize) return res.status(404).json({ ok: false, error: 'Premio no encontrado' });
   const updates = {};
   if (label !== undefined) updates.label = String(label).trim();
   if (weight !== undefined) updates.weight = Number(weight);
   if (active !== undefined) updates.active = !!active;
+  if (sendEmail !== undefined) updates.sendEmail = !!sendEmail;
   db.get('prizes').find({ id }).assign(updates).write();
   res.json({ ok: true, prize: db.get('prizes').find({ id }).value() });
 });
@@ -165,6 +253,38 @@ app.get('/api/admin/registrations.csv', requireAuth, (req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="registro-ruleta.csv"');
   res.send(csv);
+});
+
+// -------- Admin: plantilla de email de premio --------
+app.get('/api/admin/email-template', requireAuth, (req, res) => {
+  res.json({
+    subject: db.get('config.emailSubject').value() || '',
+    body: db.get('config.emailBody').value() || '',
+    smtpConfigured: !!process.env.SMTP_HOST
+  });
+});
+
+app.post('/api/admin/email-template', requireAuth, (req, res) => {
+  const { subject, body } = req.body || {};
+  if (!subject || !body) {
+    return res.status(400).json({ ok: false, error: 'Faltan el asunto o el cuerpo del mail' });
+  }
+  db.set('config.emailSubject', String(subject)).write();
+  db.set('config.emailBody', String(body)).write();
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/test-email', requireAuth, async (req, res) => {
+  const { to } = req.body || {};
+  if (!to || !/^\S+@\S+\.\S+$/.test(to)) {
+    return res.status(400).json({ ok: false, error: 'Email invalido' });
+  }
+  if (!process.env.SMTP_HOST) {
+    return res.status(400).json({ ok: false, error: 'SMTP no configurado en el servidor todavia' });
+  }
+  const result = await sendPrizeEmail(String(to).trim().toLowerCase(), 'Premio de prueba');
+  if (result.sent) return res.json({ ok: true });
+  return res.status(500).json({ ok: false, error: result.reason || 'No se pudo enviar el mail' });
 });
 
 // -------- Admin: cambiar la clave --------
