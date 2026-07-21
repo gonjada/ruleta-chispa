@@ -99,7 +99,7 @@
     <section class="card">
       <div class="card-header">
         <h2>Email de premio</h2>
-        <span class="hint">Se manda automáticamente cuando alguien gana un premio con "Enviar mail" tildado. Usá <code>{{premio}}</code> donde quieras que aparezca el nombre del premio ganado.</span>
+        <span class="hint">Se manda automáticamente cuando alguien gana un premio con "Enviar mail" tildado. Usá <code>{{premio}}</code> donde quieras que aparezca el nombre del premio ganado, y <code>{{fecha}}</code> donde quieras que aparezca la fecha del día en que se envía el mail (por ejemplo, para "Tu premio es válido hasta el {{fecha}}").</span>
       </div>
       <p id="smtp-status" class="hint"></p>
       <div class="email-field">
@@ -152,6 +152,7 @@
             <th>Email</th>
             <th>Premio ganado</th>
             <th>Fecha y hora</th>
+            <th></th>
             <th></th>
           </tr>
         </thead>

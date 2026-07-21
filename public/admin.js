@@ -199,9 +199,12 @@
         <td>${escapeHtml(r.email)}</td>
         <td>${escapeHtml(r.prizeLabel)}</td>
         <td>${date.toLocaleString('es-AR')}</td>
+        <td><button class="row-delete-btn resend-btn" data-id="${r.id}">Reenviar mail</button></td>
         <td><button class="row-delete-btn" data-id="${r.id}">Borrar</button></td>
       `;
-      tr.querySelector('.row-delete-btn').addEventListener('click', () => deleteRegistration(r.id));
+      const resendBtn = tr.querySelector('.resend-btn');
+      resendBtn.addEventListener('click', () => resendEmail(r.id, resendBtn));
+      tr.querySelector('.row-delete-btn:not(.resend-btn)').addEventListener('click', () => deleteRegistration(r.id));
       regsBody.appendChild(tr);
     });
   }
@@ -210,6 +213,32 @@
     if (!confirm('¿Borrar esta participación? La persona va a poder volver a girar con ese email.')) return;
     await fetch(`/api/admin/registrations/${id}`, { method: 'DELETE' });
     loadRegistrations();
+  }
+
+  async function resendEmail(id, btn) {
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    try {
+      const res = await fetch(`/api/admin/registrations/${id}/resend-email`, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        btn.textContent = 'Enviado ✓';
+      } else {
+        btn.textContent = 'Error';
+        btn.title = data.error || 'No se pudo enviar el mail';
+        alert(data.error || 'No se pudo enviar el mail');
+      }
+    } catch (e) {
+      btn.textContent = 'Error';
+      alert('Error de conexión');
+    } finally {
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.disabled = false;
+        btn.title = '';
+      }, 2500);
+    }
   }
 
   refreshRegsBtn.addEventListener('click', loadRegistrations);
