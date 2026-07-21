@@ -29,6 +29,14 @@
   const sendTestEmailBtn = document.getElementById('send-test-email-btn');
   const emailTemplateMsg = document.getElementById('email-template-msg');
 
+  const brevoConfigStatus = document.getElementById('brevo-config-status');
+  const brevoApiKeyInput = document.getElementById('brevo-api-key');
+  const brevoSenderEmailInput = document.getElementById('brevo-sender-email');
+  const brevoSenderNameInput = document.getElementById('brevo-sender-name');
+  const saveBrevoBtn = document.getElementById('save-brevo-btn');
+  const clearBrevoBtn = document.getElementById('clear-brevo-btn');
+  const brevoConfigMsg = document.getElementById('brevo-config-msg');
+
   const smtpConfigStatus = document.getElementById('smtp-config-status');
   const smtpHostInput = document.getElementById('smtp-host');
   const smtpPortInput = document.getElementById('smtp-port');
@@ -61,6 +69,7 @@
       loadPrizes();
       loadRegistrations();
       loadEmailTemplate();
+      loadBrevoConfig();
       loadSmtpConfig();
       loadBanner();
     } else {
@@ -86,6 +95,7 @@
       loadPrizes();
       loadRegistrations();
       loadEmailTemplate();
+      loadBrevoConfig();
       loadSmtpConfig();
       loadBanner();
     } else {
@@ -339,6 +349,65 @@
     } finally {
       sendTestEmailBtn.disabled = false;
     }
+  });
+
+  // ---------- Brevo (API HTTPS) ----------
+  async function loadBrevoConfig() {
+    const res = await fetch('/api/admin/brevo-config');
+    if (res.status === 401) { showView(loginView); return; }
+    const data = await res.json();
+    brevoSenderEmailInput.value = data.senderEmail || '';
+    brevoSenderNameInput.value = data.senderName || '';
+    brevoApiKeyInput.value = '';
+    brevoApiKeyInput.placeholder = data.hasApiKey
+      ? '•••••••• (dejar vacío para no cambiarla)'
+      : '(sin API key guardada)';
+
+    if (data.hasApiKey) {
+      brevoConfigStatus.textContent = '✓ Brevo configurado — se usa por sobre el SMTP';
+      brevoConfigStatus.style.color = '#2a8a4a';
+    } else {
+      brevoConfigStatus.textContent = 'Todavía no cargaste tu API key de Brevo';
+      brevoConfigStatus.style.color = '#7a8a99';
+    }
+  }
+
+  saveBrevoBtn.addEventListener('click', async () => {
+    const senderEmail = brevoSenderEmailInput.value.trim();
+    if (!senderEmail) {
+      brevoConfigMsg.textContent = 'Completá al menos el email remitente';
+      brevoConfigMsg.style.color = '#d21f1f';
+      return;
+    }
+    const payload = {
+      senderEmail,
+      senderName: brevoSenderNameInput.value.trim()
+    };
+    if (brevoApiKeyInput.value.trim()) payload.apiKey = brevoApiKeyInput.value.trim();
+
+    const res = await fetch('/api/admin/brevo-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      brevoConfigMsg.textContent = 'Configuración de Brevo guardada ✓';
+      brevoConfigMsg.style.color = '#2a8a4a';
+      loadBrevoConfig();
+      loadEmailTemplate();
+    } else {
+      brevoConfigMsg.textContent = data.error || 'Error al guardar';
+      brevoConfigMsg.style.color = '#d21f1f';
+    }
+    setTimeout(() => brevoConfigMsg.textContent = '', 3000);
+  });
+
+  clearBrevoBtn.addEventListener('click', async () => {
+    if (!confirm('¿Borrar la configuración de Brevo? Si hay SMTP configurado abajo, la app va a volver a usar eso.')) return;
+    await fetch('/api/admin/brevo-config', { method: 'DELETE' });
+    loadBrevoConfig();
+    loadEmailTemplate();
   });
 
   // ---------- Configuración SMTP ----------

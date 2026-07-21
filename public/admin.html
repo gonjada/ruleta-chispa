@@ -59,6 +59,34 @@
 
     <section class="card">
       <div class="card-header">
+        <h2>Brevo (envío por API) — recomendado</h2>
+        <span class="hint">Manda el mail por HTTPS en vez de SMTP, así funciona incluso en hostings (como Render free) que bloquean los puertos de SMTP. Necesitás una cuenta en <a href="https://www.brevo.com" target="_blank" rel="noopener">brevo.com</a> y tu API key (Configuración → SMTP y API → API Keys).</span>
+      </div>
+      <p id="brevo-config-status" class="hint"></p>
+      <div class="smtp-grid">
+        <div class="email-field">
+          <label>API Key de Brevo</label>
+          <input id="brevo-api-key" type="password" placeholder="•••••••• (dejar vacío para no cambiarla)" autocomplete="new-password" />
+        </div>
+        <div class="email-field">
+          <label>Email remitente</label>
+          <input id="brevo-sender-email" type="text" placeholder="atilios@chispacreativa.com.ar" autocomplete="off" />
+        </div>
+        <div class="email-field">
+          <label>Nombre remitente</label>
+          <input id="brevo-sender-name" type="text" placeholder="Atilio's Sandwich Co." />
+        </div>
+      </div>
+      <p class="hint">El email remitente tiene que estar validado como "Sender" en tu cuenta de Brevo, si no los mails van a rebotar.</p>
+      <div class="email-actions">
+        <button id="save-brevo-btn" class="btn-primary">Guardar configuración de Brevo</button>
+        <button id="clear-brevo-btn" class="btn-secondary danger">Borrar configuración</button>
+      </div>
+      <p id="brevo-config-msg" class="msg"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
         <h2>Configuración SMTP</h2>
         <span class="hint">Datos del servidor de correo que se usa para mandar el mail de premio. Los podés pedir a tu proveedor de mail (Brevo, Gmail, etc.).</span>
       </div>
