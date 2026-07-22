@@ -156,22 +156,23 @@ function getTransporter() {
 }
 
 // Nota: Gmail bloquea imagenes embebidas en base64 (data URI) dentro del HTML
-// del mail por seguridad, asi que esa no es una opcion valida. Probamos servir
-// el logo desde raw.githubusercontent.com, pero GitHub rate-limita ese dominio
-// a 60 pedidos/hora por IP para uso no autenticado, y el proxy de imagenes de
-// Gmail (compartido por todo Gmail) pisa ese limite todo el tiempo, causando el
-// icono roto. jsDelivr es un CDN publico pensado justamente para servir
-// archivos de GitHub sin ese problema, asi que el logo se sirve desde ahi.
-const LOGO_CDN_URL = 'https://cdn.jsdelivr.net/gh/gonjada/ruleta-chispa@main/public/images/logo-atilios-white.png';
+// del mail por seguridad, asi que esa no es una opcion valida. Probamos GitHub
+// raw (rate-limitado a 60 pedidos/hora, causaba el icono roto) y despues
+// jsDelivr (funciona perfecto si uno la abre a mano) - pero en ambos casos
+// Brevo sigue mostrando el link roto. Motivo real: Brevo reescribe TODAS las
+// imagenes del mail para servirlas desde su propio CDN de tracking
+// (r.mail.chispacreativa.com.ar), y ese paso de "copiar la imagen a su
+// servidor" le esta fallando con dominios externos (GitHub o jsDelivr), sin
+// importar cual sea. La unica forma de sacar esa variable de la ecuacion es
+// que la imagen viva en nuestro propio dominio (el mismo que usa el banner),
+// para que el fetch de Brevo sea directo a un servidor que controlamos.
+const LOGO_CDN_URL = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/images/logo-atilios-white.png';
 
 function buildEmailHtml(bodyText) {
   const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
   const logoUrl = LOGO_CDN_URL;
   const hasBanner = bannerExists();
-  // El banner si es un archivo que Maru sube dinamicamente (no vive en GitHub),
-  // asi que sigue sirviendose desde la app. En la practica el riesgo de que el
-  // servidor este dormido es bajo: el mail se manda justo despues de que un
-  // participante gira la ruleta, momento en el que el servidor ya esta despierto.
+  // El banner ya se servia desde nuestro propio dominio desde el principio.
   const bannerUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/uploads/email-banner.jpg?v=' + Date.now();
   const bannerHtml = hasBanner
     ? `<div style="line-height:0;"><img src="${bannerUrl}" alt="" width="480" style="width:100%;max-width:480px;height:auto;display:block;" /></div>`
