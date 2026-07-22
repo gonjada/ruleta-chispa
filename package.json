@@ -4,8 +4,8 @@
   "description": "Web app de ruleta de premios con panel de administracion - Chispa Creativa",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node bootstrap.js",
+    "dev": "node bootstrap.js"
   },
   "dependencies": {
     "cors": "2.8.5",
@@ -13,6 +13,7 @@
     "express-session": "1.18.0",
     "image-size": "1.1.1",
     "lowdb": "1.0.0",
+    "mongodb": "6.9.0",
     "multer": "1.4.5-lts.1",
     "nodemailer": "6.9.14"
   },

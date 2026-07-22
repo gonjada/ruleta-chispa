@@ -6,6 +6,7 @@ const nodemailer = require('nodemailer');
 const multer = require('multer');
 const sizeOf = require('image-size');
 const db = require('./db');
+const mongoSync = require('./mongoSync');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -287,6 +288,7 @@ app.post('/api/spin', requireAuth, async (req, res) => {
     emailSent: false
   };
   db.get('registrations').push(registration).write();
+  mongoSync.pushToMongo(); // respaldo inmediato (no bloquea la respuesta)
 
   res.json({
     ok: true,
@@ -594,4 +596,5 @@ app.use((req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Ruleta corriendo en http://localhost:${PORT}`);
+  mongoSync.startAutoSync();
 });
