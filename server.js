@@ -155,11 +155,31 @@ function getTransporter() {
   return cachedTransporter;
 }
 
+// Incrusta la imagen directo en el HTML del mail (base64) en vez de un link
+// externo. Asi el logo/banner viajan pegados al mail y no dependen de que el
+// servidor este despierto en el momento en que Gmail/Outlook va a buscarlos
+// (en el plan free de Render el servidor se duerme por inactividad, y si la
+// imagen se pide justo en ese momento queda "rota" en el mail para siempre).
+function fileToDataUri(filePath, mimeType) {
+  try {
+    const buf = fs.readFileSync(filePath);
+    return `data:${mimeType};base64,${buf.toString('base64')}`;
+  } catch (e) {
+    return null;
+  }
+}
+
+const LOGO_PATH = path.join(__dirname, 'public', 'images', 'logo-atilios-white.png');
+
 function buildEmailHtml(bodyText) {
   const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
-  const logoUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/images/logo-atilios-white.png';
+  const logoDataUri = fileToDataUri(LOGO_PATH, 'image/png');
+  // Si por algun motivo no se puede leer el archivo local, cae de nuevo al link
+  // externo de siempre (mejor eso que un mail sin logo).
+  const logoUrl = logoDataUri || ((process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/images/logo-atilios-white.png');
   const hasBanner = bannerExists();
-  const bannerUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/uploads/email-banner.jpg?v=' + Date.now();
+  const bannerDataUri = hasBanner ? fileToDataUri(BANNER_PATH, 'image/jpeg') : null;
+  const bannerUrl = bannerDataUri || ((process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/uploads/email-banner.jpg?v=' + Date.now());
   const bannerHtml = hasBanner
     ? `<div style="line-height:0;"><img src="${bannerUrl}" alt="" width="480" style="width:100%;max-width:480px;height:auto;display:block;" /></div>`
     : '';
