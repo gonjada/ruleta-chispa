@@ -131,6 +131,7 @@
         <td class="prob-cell">${prob}</td>
         <td><input type="checkbox" ${p.active ? 'checked' : ''} data-field="active" /></td>
         <td><input type="checkbox" ${p.sendEmail !== false ? 'checked' : ''} data-field="sendEmail" title="Enviar mail con el premio cuando alguien lo gane" /></td>
+        <td><input type="checkbox" ${p.allowReplay ? 'checked' : ''} data-field="allowReplay" title="Si lo gana, puede volver a girar con el mismo email" /></td>
         <td><button class="delete-btn">Eliminar</button></td>
       `;
 
@@ -138,19 +139,22 @@
       const weightInput = tr.querySelector('[data-field=weight]');
       const activeInput = tr.querySelector('[data-field=active]');
       const sendEmailInput = tr.querySelector('[data-field=sendEmail]');
+      const allowReplayInput = tr.querySelector('[data-field=allowReplay]');
       const deleteBtn = tr.querySelector('.delete-btn');
 
       const save = () => updatePrize(p.id, {
         label: labelInput.value,
         weight: Number(weightInput.value),
         active: activeInput.checked,
-        sendEmail: sendEmailInput.checked
+        sendEmail: sendEmailInput.checked,
+        allowReplay: allowReplayInput.checked
       });
 
       labelInput.addEventListener('change', save);
       weightInput.addEventListener('change', save);
       activeInput.addEventListener('change', save);
       sendEmailInput.addEventListener('change', save);
+      allowReplayInput.addEventListener('change', save);
       deleteBtn.addEventListener('click', () => deletePrize(p.id));
 
       prizesBody.appendChild(tr);
