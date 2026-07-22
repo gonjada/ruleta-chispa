@@ -155,24 +155,25 @@ function getTransporter() {
   return cachedTransporter;
 }
 
-// Nota: Gmail bloquea imagenes embebidas en base64 (data URI) dentro del HTML
-// del mail por seguridad, asi que esa no es una opcion valida. Probamos GitHub
-// raw (rate-limitado a 60 pedidos/hora, causaba el icono roto) y despues
-// jsDelivr (funciona perfecto si uno la abre a mano) - pero en ambos casos
-// Brevo sigue mostrando el link roto. Motivo real: Brevo reescribe TODAS las
-// imagenes del mail para servirlas desde su propio CDN de tracking
-// (r.mail.chispacreativa.com.ar), y ese paso de "copiar la imagen a su
-// servidor" le esta fallando con dominios externos (GitHub o jsDelivr), sin
-// importar cual sea. La unica forma de sacar esa variable de la ecuacion es
-// que la imagen viva en nuestro propio dominio (el mismo que usa el banner),
-// para que el fetch de Brevo sea directo a un servidor que controlamos.
-const LOGO_CDN_URL = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/images/logo-atilios-white.png';
+// Nota sobre por que el header es texto y no la imagen del logo: Gmail bloquea
+// imagenes en base64 dentro del HTML del mail, asi que esa opcion quedo
+// descartada. Probamos GitHub raw, jsDelivr y hasta nuestro propio dominio
+// como fuente de la imagen, y en los tres casos Brevo la mostraba rota.
+// Motivo real (confirmado): Brevo reescribe TODAS las imagenes del mail para
+// servirlas desde su dominio de marca de tracking (r.mail.chispacreativa.com.ar),
+// pero ese subdominio no esta resolviendo en el DNS real (la delegacion NS que
+// Brevo pide todavia no quedo aplicada del lado del proveedor de hosting), asi
+// que cualquier imagen que pongamos en el mail termina rota sin importar donde
+// la alojemos. Hasta que esa delegacion NS quede resuelta (requiere soporte del
+// proveedor de DNS), el header va con el nombre estilizado en texto en vez de
+// la imagen del logo: se ve bien y no depende de nada externo.
 
 function buildEmailHtml(bodyText) {
   const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
-  const logoUrl = LOGO_CDN_URL;
   const hasBanner = bannerExists();
-  // El banner ya se servia desde nuestro propio dominio desde el principio.
+  // El banner usa el mismo mecanismo de imagenes de Brevo, asi que por ahora
+  // tiene el mismo riesgo de salir roto (ver nota arriba). Se deja como esta
+  // porque es opcional y Maru lo controla desde el panel.
   const bannerUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/uploads/email-banner.jpg?v=' + Date.now();
   const bannerHtml = hasBanner
     ? `<div style="line-height:0;"><img src="${bannerUrl}" alt="" width="480" style="width:100%;max-width:480px;height:auto;display:block;" /></div>`
@@ -180,8 +181,9 @@ function buildEmailHtml(bodyText) {
   return `
   <div style="background:#0c2c42;padding:40px 0;font-family:Georgia,'Times New Roman',serif;">
     <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;">
-      <div style="background:#1c4b6e;padding:30px 20px;text-align:center;">
-        <img src="${logoUrl}" alt="Atilio's Sandwich Co." width="220" style="max-width:220px;height:auto;display:inline-block;" />
+      <div style="background:#1c4b6e;padding:34px 20px;text-align:center;">
+        <div style="color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:bold;letter-spacing:1px;line-height:1.1;">ATILIO&#39;S</div>
+        <div style="color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-style:italic;letter-spacing:2px;margin-top:2px;">sandwich co.</div>
       </div>
       <div style="padding:36px 30px;color:#1c2b36;font-size:17px;line-height:1.6;">
         ${safeBody}
