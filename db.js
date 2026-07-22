@@ -32,16 +32,16 @@ db.defaults({
     brevo: { apiKey: '', senderEmail: '', senderName: "Atilio's Sandwich Co." }
   },
   prizes: [
-    { id: 1, label: '10% OFF', weight: 20, active: true, sendEmail: true },
-    { id: 2, label: 'Envio Gratis', weight: 15, active: true, sendEmail: true },
-    { id: 3, label: 'Segui participando', weight: 20, active: true, sendEmail: false },
-    { id: 4, label: '2x1', weight: 10, active: true, sendEmail: true },
-    { id: 5, label: 'Regalo Sorpresa', weight: 8, active: true, sendEmail: true },
-    { id: 6, label: '15% OFF', weight: 12, active: true, sendEmail: true },
-    { id: 7, label: 'Casi Casi', weight: 15, active: true, sendEmail: false },
-    { id: 8, label: 'Premio Mayor', weight: 3, active: true, sendEmail: true },
-    { id: 9, label: '20% OFF', weight: 7, active: true, sendEmail: true },
-    { id: 10, label: 'Otra Vuelta', weight: 10, active: true, sendEmail: false }
+    { id: 1, label: '10% OFF', weight: 20, active: true, sendEmail: true, allowReplay: false },
+    { id: 2, label: 'Envio Gratis', weight: 15, active: true, sendEmail: true, allowReplay: false },
+    { id: 3, label: 'Segui participando', weight: 20, active: true, sendEmail: false, allowReplay: false },
+    { id: 4, label: '2x1', weight: 10, active: true, sendEmail: true, allowReplay: false },
+    { id: 5, label: 'Regalo Sorpresa', weight: 8, active: true, sendEmail: true, allowReplay: false },
+    { id: 6, label: '15% OFF', weight: 12, active: true, sendEmail: true, allowReplay: false },
+    { id: 7, label: 'Casi Casi', weight: 15, active: true, sendEmail: false, allowReplay: false },
+    { id: 8, label: 'Premio Mayor', weight: 3, active: true, sendEmail: true, allowReplay: false },
+    { id: 9, label: '20% OFF', weight: 7, active: true, sendEmail: true, allowReplay: false },
+    { id: 10, label: 'Otra Vuelta', weight: 10, active: true, sendEmail: false, allowReplay: false }
   ],
   registrations: [],
   nextPrizeId: 11
@@ -57,6 +57,10 @@ const prizesNow = db.get('prizes').value() || [];
 prizesNow.forEach((p) => {
   if (p.sendEmail === undefined) {
     p.sendEmail = true;
+    needsWrite = true;
+  }
+  if (p.allowReplay === undefined) {
+    p.allowReplay = false;
     needsWrite = true;
   }
 });

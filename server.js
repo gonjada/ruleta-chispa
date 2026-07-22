@@ -261,14 +261,22 @@ app.post('/api/spin', requireAuth, async (req, res) => {
   }
   const normalizedEmail = String(email).trim().toLowerCase();
 
-  const previous = db.get('registrations').find({ email: normalizedEmail }).value();
-  if (previous) {
-    return res.status(409).json({
-      ok: false,
-      alreadyPlayed: true,
-      error: 'Ya jugaste con este email',
-      prizeLabel: previous.prizeLabel
-    });
+  // Se bloquea el email solo si su ULTIMO giro gano un premio que no habilita
+  // "volver a tirar". Si el ultimo premio tiene allowReplay activado (ej:
+  // "Otra Vuelta"), se le deja girar de nuevo.
+  const emailRegs = db.get('registrations').filter({ email: normalizedEmail }).value();
+  if (emailRegs.length > 0) {
+    const last = emailRegs[emailRegs.length - 1];
+    const lastPrize = db.get('prizes').find({ id: last.prizeId }).value();
+    const canReplay = !!(lastPrize && lastPrize.allowReplay);
+    if (!canReplay) {
+      return res.status(409).json({
+        ok: false,
+        alreadyPlayed: true,
+        error: 'Ya jugaste con este email',
+        prizeLabel: last.prizeLabel
+      });
+    }
   }
 
   const activePrizes = db.get('prizes').filter({ active: true }).value();
@@ -318,7 +326,7 @@ app.get('/api/admin/prizes', requireAuth, (req, res) => {
 
 app.post('/api/admin/prizes', requireAuth, (req, res) => {
   // Crea un premio nuevo
-  const { label, weight, sendEmail } = req.body || {};
+  const { label, weight, sendEmail, allowReplay } = req.body || {};
   if (!label) return res.status(400).json({ ok: false, error: 'Falta el texto del premio' });
   const nextId = db.get('nextPrizeId').value();
   const prize = {
@@ -326,7 +334,8 @@ app.post('/api/admin/prizes', requireAuth, (req, res) => {
     label: String(label).trim(),
     weight: Number(weight) || 1,
     active: true,
-    sendEmail: sendEmail === undefined ? true : !!sendEmail
+    sendEmail: sendEmail === undefined ? true : !!sendEmail,
+    allowReplay: !!allowReplay
   };
   db.get('prizes').push(prize).write();
   db.set('nextPrizeId', nextId + 1).write();
@@ -335,7 +344,7 @@ app.post('/api/admin/prizes', requireAuth, (req, res) => {
 
 app.put('/api/admin/prizes/:id', requireAuth, (req, res) => {
   const id = Number(req.params.id);
-  const { label, weight, active, sendEmail } = req.body || {};
+  const { label, weight, active, sendEmail, allowReplay } = req.body || {};
   const prize = db.get('prizes').find({ id }).value();
   if (!prize) return res.status(404).json({ ok: false, error: 'Premio no encontrado' });
   const updates = {};
@@ -343,6 +352,7 @@ app.put('/api/admin/prizes/:id', requireAuth, (req, res) => {
   if (weight !== undefined) updates.weight = Number(weight);
   if (active !== undefined) updates.active = !!active;
   if (sendEmail !== undefined) updates.sendEmail = !!sendEmail;
+  if (allowReplay !== undefined) updates.allowReplay = !!allowReplay;
   db.get('prizes').find({ id }).assign(updates).write();
   res.json({ ok: true, prize: db.get('prizes').find({ id }).value() });
 });
