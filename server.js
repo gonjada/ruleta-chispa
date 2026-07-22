@@ -156,11 +156,13 @@ function getTransporter() {
 }
 
 // Nota: Gmail bloquea imagenes embebidas en base64 (data URI) dentro del HTML
-// del mail por seguridad, asi que esa no es una opcion valida. En cambio, el
-// logo (que no cambia y ya esta en GitHub) se sirve directo desde el CDN de
-// GitHub, que esta siempre activo y no depende de que el servidor de Render
-// este despierto en el momento en que Gmail va a buscar la imagen.
-const LOGO_CDN_URL = 'https://raw.githubusercontent.com/gonjada/ruleta-chispa/main/public/images/logo-atilios-white.png';
+// del mail por seguridad, asi que esa no es una opcion valida. Probamos servir
+// el logo desde raw.githubusercontent.com, pero GitHub rate-limita ese dominio
+// a 60 pedidos/hora por IP para uso no autenticado, y el proxy de imagenes de
+// Gmail (compartido por todo Gmail) pisa ese limite todo el tiempo, causando el
+// icono roto. jsDelivr es un CDN publico pensado justamente para servir
+// archivos de GitHub sin ese problema, asi que el logo se sirve desde ahi.
+const LOGO_CDN_URL = 'https://cdn.jsdelivr.net/gh/gonjada/ruleta-chispa@main/public/images/logo-atilios-white.png';
 
 function buildEmailHtml(bodyText) {
   const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
