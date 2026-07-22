@@ -155,31 +155,22 @@ function getTransporter() {
   return cachedTransporter;
 }
 
-// Incrusta la imagen directo en el HTML del mail (base64) en vez de un link
-// externo. Asi el logo/banner viajan pegados al mail y no dependen de que el
-// servidor este despierto en el momento en que Gmail/Outlook va a buscarlos
-// (en el plan free de Render el servidor se duerme por inactividad, y si la
-// imagen se pide justo en ese momento queda "rota" en el mail para siempre).
-function fileToDataUri(filePath, mimeType) {
-  try {
-    const buf = fs.readFileSync(filePath);
-    return `data:${mimeType};base64,${buf.toString('base64')}`;
-  } catch (e) {
-    return null;
-  }
-}
-
-const LOGO_PATH = path.join(__dirname, 'public', 'images', 'logo-atilios-white.png');
+// Nota: Gmail bloquea imagenes embebidas en base64 (data URI) dentro del HTML
+// del mail por seguridad, asi que esa no es una opcion valida. En cambio, el
+// logo (que no cambia y ya esta en GitHub) se sirve directo desde el CDN de
+// GitHub, que esta siempre activo y no depende de que el servidor de Render
+// este despierto en el momento en que Gmail va a buscar la imagen.
+const LOGO_CDN_URL = 'https://raw.githubusercontent.com/gonjada/ruleta-chispa/main/public/images/logo-atilios-white.png';
 
 function buildEmailHtml(bodyText) {
   const safeBody = String(bodyText || '').replace(/\n/g, '<br>');
-  const logoDataUri = fileToDataUri(LOGO_PATH, 'image/png');
-  // Si por algun motivo no se puede leer el archivo local, cae de nuevo al link
-  // externo de siempre (mejor eso que un mail sin logo).
-  const logoUrl = logoDataUri || ((process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/images/logo-atilios-white.png');
+  const logoUrl = LOGO_CDN_URL;
   const hasBanner = bannerExists();
-  const bannerDataUri = hasBanner ? fileToDataUri(BANNER_PATH, 'image/jpeg') : null;
-  const bannerUrl = bannerDataUri || ((process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/uploads/email-banner.jpg?v=' + Date.now());
+  // El banner si es un archivo que Maru sube dinamicamente (no vive en GitHub),
+  // asi que sigue sirviendose desde la app. En la practica el riesgo de que el
+  // servidor este dormido es bajo: el mail se manda justo despues de que un
+  // participante gira la ruleta, momento en el que el servidor ya esta despierto.
+  const bannerUrl = (process.env.PUBLIC_URL || 'https://ruleta-chispa.onrender.com') + '/uploads/email-banner.jpg?v=' + Date.now();
   const bannerHtml = hasBanner
     ? `<div style="line-height:0;"><img src="${bannerUrl}" alt="" width="480" style="width:100%;max-width:480px;height:auto;display:block;" /></div>`
     : '';
